@@ -1,0 +1,12 @@
+<div class="modal-overlay" id="modal-new-aviso">
+  <div class="modal">
+    <div class="modal-header"><h2><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a3 3 0 0 1 0 6"/><path d="M10 8v11a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V8"/><path d="M12 8H6L3 5v8l3-3h9a3 3 0 0 0 0-6v6"/></svg>Nuevo aviso</h2><button class="modal-close" onclick="closeModal('modal-new-aviso')"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Titulo</label><input type="text" class="form-input" placeholder="Ej: Reunion de padres de familia"></div>
+    <div class="form-group"><label class="form-label">Categoria</label><select class="form-input"><option>Academico</option><option>Evento</option><option>Administrativo</option><option>Urgente</option></select></div>
+    <div class="form-group"><label class="form-label">Contenido</label><textarea class="form-input" rows="4" style="resize:vertical" placeholder="Detalle del comunicado..."></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal('modal-new-aviso')">Cancelar</button>
+      <button class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Publicar</button>
+    </div>
+  </div>
+</div>

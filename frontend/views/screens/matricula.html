@@ -1,0 +1,308 @@
+<div class="page" id="page-matricula">
+  <div class="topbar">
+    <div>
+      <div class="page-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        Matrícula
+      </div>
+      <div class="page-sub">Módulo de matrícula — Registrador</div>
+    </div>
+    <button class="btn btn-primary" onclick="submitMatriculaForm()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Nueva matrícula
+    </button>
+  </div>
+
+  <!-- Etiquetas BCE -->
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;align-items:center">
+    <span style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Capas del módulo:</span>
+    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-weight:600;border:1px solid rgba(79,70,229,.2)">● CI_MenuPrincipal</span>
+    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:var(--accent-light);color:var(--accent);font-weight:600;border:1px solid rgba(79,70,229,.2)">● CI_Matricula</span>
+    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#ede9fe;color:#7c3aed;font-weight:600;border:1px solid rgba(124,58,237,.2)">● CC_Matricula</span>
+    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#f0fdf4;color:#16a34a;font-weight:600;border:1px solid rgba(22,163,74,.2)">● Matricula</span>
+    <span style="font-size:11px;padding:3px 10px;border-radius:20px;background:#f0fdf4;color:#16a34a;font-weight:600;border:1px solid rgba(22,163,74,.2)">● DT.Matricula</span>
+  </div>
+
+  <!-- ── CI_MenuPrincipal ──────────────────────────── -->
+  <div class="card" style="border-left:4px solid var(--accent);margin-bottom:14px">
+    <div class="card-header" style="background:var(--accent-light)">
+      <h2 style="color:var(--accent)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        CI_MenuPrincipal
+      </h2>
+      <span style="font-size:11px;color:var(--muted)">Boundary — Interfaz de navegación</span>
+    </div>
+    <div class="card-pad" style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-sm" onclick="showPage('dashboard')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+        Inicio
+      </button>
+      <button class="btn btn-sm btn-primary" onclick="showPage('matricula')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        Matrícula
+      </button>
+      <button class="btn btn-sm" onclick="showPage('perfil')">
+        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Perfil
+      </button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <!-- ── CI_Matricula ─────────────────────────────── -->
+    <div>
+      <div class="card" style="border-left:4px solid var(--accent)">
+        <div class="card-header" style="background:var(--accent-light)">
+          <h2 style="color:var(--accent)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+            CI_Matricula
+          </h2>
+          <span style="font-size:11px;color:var(--muted)">Boundary — Formulario de matrícula</span>
+        </div>
+        <div class="card-pad">
+          <div class="matricula-progress" aria-label="Progreso de matrícula">
+            <button class="matricula-step-nav is-active" type="button" data-step="1" onclick="showMatriculaStep(1)">
+              <span class="matricula-step-number">1</span>
+              <span><strong>Alumno y curso</strong><small>Datos de matrícula</small></span>
+            </button>
+            <span class="matricula-progress-line" aria-hidden="true"></span>
+            <button class="matricula-step-nav" type="button" data-step="2" onclick="showMatriculaStep(2)">
+              <span class="matricula-step-number">2</span>
+              <span><strong>Resumen</strong><small>Revisar y confirmar</small></span>
+            </button>
+          </div>
+
+          <div id="matricula-step-1" style="display:block">
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:2px">Datos del alumno</div>
+              <div class="form-group" style="margin:0;position:relative">
+                <label class="form-label">Buscar alumno</label>
+                <div style="position:relative">
+                  <input type="text" class="form-input" id="ci-mat-buscar-alumno" placeholder="DNI o nombre del alumno" oninput="filtrarAlumnosMatricula()" autocomplete="off" style="padding-right:42px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted)"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                </div>
+                <div id="ci-mat-alumno-sugerencias" style="display:none;margin-top:8px;max-height:180px;overflow:auto;border:1px solid rgba(148,163,184,.35);border-radius:12px;background:#fff;box-shadow:0 12px 24px rgba(15,23,42,.08);padding:6px;position:relative;z-index:20"></div>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Alumno ya registrado *</label>
+                <select class="form-input" id="ci-mat-alumno-registrado" onchange="cargarAlumnoMatriculaSeleccionado()">
+                  <option value="">Seleccionar alumno existente...</option>
+                </select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Nombres</label>
+                  <input type="text" class="form-input" id="ci-mat-nombres" placeholder="Nombres" disabled>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Apellidos</label>
+                  <input type="text" class="form-input" id="ci-mat-apellidos" placeholder="Apellidos" disabled>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">DNI</label>
+                  <input type="text" class="form-input" id="ci-mat-dni" placeholder="00000000" maxlength="8" disabled>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Fecha de nacimiento</label>
+                  <input type="date" class="form-input" id="ci-mat-fechanac" disabled>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Sexo</label>
+                  <select class="form-input" id="ci-mat-sexo" disabled>
+                    <option value="">Seleccionar...</option>
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Procedencia</label>
+                  <select class="form-input" id="ci-mat-procedencia" disabled>
+                    <option value="nuevo">Alumno nuevo</option>
+                    <option value="traslado">Traslado de otro colegio</option>
+                    <option value="promocion">Promoción interna</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Dirección</label>
+                <input type="text" class="form-input" id="ci-mat-direccion" placeholder="Av./Jr./Calle, N°, distrito" disabled>
+              </div>
+
+              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Datos académicos</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Nivel *</label>
+                  <select class="form-input" id="ci-mat-nivel" onchange="updateGradoOptions('ci-mat-nivel','ci-mat-grado')">
+                    <option value="">Seleccionar...</option>
+                    <option value="Primaria">Primaria</option>
+                    <option value="Secundaria">Secundaria</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Grado *</label>
+                  <select class="form-input" id="ci-mat-grado" disabled>
+                    <option value="">Selecciona nivel primero</option>
+                  </select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Sección *</label>
+                  <select class="form-input" id="ci-mat-seccion">
+                    <option value="">Seleccionar...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                  </select>
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Año lectivo</label>
+                  <input type="text" class="form-input" id="ci-mat-anio" value="2026">
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Turno</label>
+                  <select class="form-input" id="ci-mat-turno">
+                    <option value="Mañana">Mañana</option>
+                    <option value="Tarde">Tarde</option>
+                    <option value="Noche">Noche</option>
+                  </select>
+                </div>
+              </div>
+
+              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Datos del apoderado</div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Nombre del apoderado</label>
+                <input type="text" class="form-input" id="ci-mat-apoderado" placeholder="Nombre completo del apoderado" disabled>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">DNI del apoderado</label>
+                  <input type="text" class="form-input" id="ci-mat-apo-dni" placeholder="00000000" maxlength="8" disabled>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label">Teléfono / Celular</label>
+                  <input type="text" class="form-input" id="ci-mat-apo-tel" placeholder="+51 999 999 999" disabled>
+                </div>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Correo del apoderado</label>
+                <input type="email" class="form-input" id="ci-mat-apo-email" placeholder="correo@ejemplo.com" disabled>
+              </div>
+
+              <div class="form-group" style="margin:0">
+                <label class="form-label">Observaciones</label>
+                <textarea class="form-input" id="ci-mat-obs" rows="2" placeholder="Notas adicionales..." style="resize:vertical" disabled></textarea>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:6px">
+                <button class="btn" type="button" onclick="showMatriculaStep(2)">Siguiente</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="matricula-step-2" style="display:none">
+            <div style="display:flex;flex-direction:column;gap:12px">
+              <div class="card" style="border-left:4px solid #16a34a; margin:0">
+                <div class="card-header" style="background:#f0fdf4">
+                  <h2 style="color:#16a34a">Resumen de matrícula</h2>
+                </div>
+                <div class="card-pad" id="matricula-resumen-content"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;gap:10px">
+                <button class="btn" type="button" onclick="showMatriculaStep(1)">Volver</button>
+                <button class="btn btn-primary" type="button" onclick="submitMatriculaForm()">Confirmar matrícula</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CC_Matricula + Matricula + DT.Matricula ─── -->
+    <div style="display:flex;flex-direction:column;gap:14px">
+
+      <!-- CC_Matricula: Control -->
+      <div class="card" style="border-left:4px solid #7c3aed">
+        <div class="card-header" style="background:#ede9fe">
+          <h2 style="color:#7c3aed">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/></svg>
+            CC_Matricula
+          </h2>
+          <span style="font-size:11px;color:#7c3aed;opacity:.7">Control — Lógica de negocio</span>
+        </div>
+        <div class="card-pad" style="display:grid;grid-template-columns:minmax(180px,1fr) auto;gap:10px;align-items:end">
+          <div class="form-group" style="margin:0">
+            <label class="form-label" for="matricula-codigo-alumno">Consulta de matrícula por código de alumno</label>
+            <input type="text" class="form-input" id="matricula-codigo-alumno" inputmode="numeric" placeholder="Código del alumno (ej. 1)">
+          </div>
+          <button class="btn btn-primary" type="button" id="matricula-buscar-codigo" onclick="buscarMatriculaPorCodigo()">Consultar</button>
+          <div id="matricula-consulta-mensaje" role="status" aria-live="polite" style="grid-column:1/-1"></div>
+          <div id="matricula-consulta-resultados" style="grid-column:1/-1"></div>
+        </div>
+        <div class="card-pad" style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+          <input type="text" class="form-input" style="flex:1;min-width:140px;padding:6px 10px;font-size:12px" placeholder="Buscar por nombre o sección..." id="matricula-search" oninput="filterMatriculas()">
+          <select class="form-input" style="width:auto;padding:6px 10px;font-size:12px" id="matricula-filter-estado" onchange="filterMatriculas()">
+            <option value="all">Todos los estados</option>
+            <option value="activa">Activa</option>
+            <option value="pendiente">Pendiente</option>
+            <option value="anulada">Anulada</option>
+          </select>
+          <span style="font-size:12px;color:var(--muted)" id="matricula-count">0 matrículas</span>
+        </div>
+      </div>
+
+      <!-- Matricula: Entidad tabla -->
+      <div class="card" style="border-left:4px solid #16a34a">
+        <div class="card-header" style="background:#f0fdf4">
+          <h2 style="color:#16a34a">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            Matricula
+          </h2>
+          <span style="font-size:11px;color:#16a34a;opacity:.7">Entity — Tabla de matrículas</span>
+        </div>
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse;font-size:13px" id="matricula-table">
+            <thead>
+              <tr style="border-bottom:2px solid var(--border)">
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">N°</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Alumno</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Sección</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Año</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Fecha</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Estado</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Ver</th>
+              </tr>
+            </thead>
+            <tbody id="matricula-tbody">
+              <tr>
+                <td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                  Sin matrículas. Usa el formulario para agregar.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- DT.Matricula: Entidad detalle -->
+      <div class="card" style="border-left:4px solid #16a34a">
+        <div class="card-header" style="background:#f0fdf4">
+          <h2 style="color:#16a34a">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><circle cx="12" cy="10" r="3"/><line x1="9" y1="21" x2="9.01" y2="21"/><line x1="15" y1="21" x2="15.01" y2="21"/></svg>
+            DT.Matricula
+          </h2>
+          <span style="font-size:11px;color:#16a34a;opacity:.7">Entity — Detalle de matrícula seleccionada</span>
+        </div>
+        <div class="card-pad" id="dt-matricula-detalle">
+          <div style="font-size:12px;color:var(--muted);text-align:center;padding:12px 0">Haz clic en <b>Ver</b> en la tabla para ver el detalle completo de una matrícula.</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

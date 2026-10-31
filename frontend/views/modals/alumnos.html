@@ -1,0 +1,19 @@
+<div class="modal-overlay" id="modal-new-student">
+  <div class="modal">
+    <div class="modal-header"><h2><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>Agregar alumno</h2><button class="modal-close" onclick="closeModal('modal-new-student')"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label class="form-label">Nombre(s)</label><input type="text" class="form-input" placeholder="Nombre"></div>
+      <div class="form-group"><label class="form-label">Apellidos</label><input type="text" class="form-input" placeholder="Apellidos"></div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="form-group"><label class="form-label">Matricula</label><input type="text" class="form-input" placeholder="Ej: 2024-001"></div>
+      <div class="form-group"><label class="form-label">Grupo</label><select class="form-input" id="new-student-group"><option value="">Seleccionar...</option></select></div>
+    </div>
+    <div class="form-group"><label class="form-label">Correo institucional</label><input type="email" class="form-input" placeholder="alumno@escuela.edu.mx"></div>
+    <div class="form-group"><label class="form-label">Telefono del tutor</label><input type="tel" class="form-input" placeholder="55 0000 0000"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal('modal-new-student')">Cancelar</button>
+      <button class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg> Registrar</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,12 @@
+<div class="page active" id="page-dashboard">
+      <div class="topbar">
+        <div><div class="page-title" id="dash-greeting">Bienvenido</div><div class="page-sub" id="dash-date"></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <div class="data-status" id="data-status" title="Los datos se conservan en este navegador mientras no se configure una API"><span class="data-status-dot"></span><span id="data-status-label">Datos locales</span></div>
+          <button class="btn btn-primary teacher-only" onclick="openModal('modal-new-task')"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Nueva tarea</button>
+        </div>
+      </div>
+      <div class="stat-grid" id="dash-stats" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="quick-grid" id="dash-quick" style="grid-template-columns:repeat(4,1fr)"></div>
+      <div class="two-col"><div id="dash-left"></div><div id="dash-right"></div></div>
+    </div>

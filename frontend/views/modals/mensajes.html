@@ -1,0 +1,12 @@
+<div class="modal-overlay" id="modal-new-msg">
+  <div class="modal">
+    <div class="modal-header"><h2><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>Redactar mensaje</h2><button class="modal-close" onclick="closeModal('modal-new-msg')"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button></div>
+    <div class="form-group"><label class="form-label">Para</label><input type="text" class="form-input" placeholder="Nombre o correo del destinatario"></div>
+    <div class="form-group"><label class="form-label">Asunto</label><input type="text" class="form-input" placeholder="Asunto del mensaje"></div>
+    <div class="form-group"><label class="form-label">Mensaje</label><textarea class="form-input" rows="4" style="resize:vertical" placeholder="Escribe tu mensaje..."></textarea></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button class="btn" onclick="closeModal('modal-new-msg')">Cancelar</button>
+      <button class="btn btn-primary"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Enviar</button>
+    </div>
+  </div>
+</div>
