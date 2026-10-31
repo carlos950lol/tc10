@@ -80,6 +80,37 @@ function bloquearCamposAlumnoMatricula(bloquear = true){
   });
 }
 
+function asignarCampoAlumnoMatricula(id, valor){
+  const el = document.getElementById(id);
+  if(!el) return;
+  if(el.tagName !== 'SELECT'){
+    el.value = valor;
+    return;
+  }
+
+  el.querySelector('option[data-alumno-dynamic]')?.remove();
+  const valorNormalizado = String(valor || '').trim();
+  const opcion = Array.from(el.options).find(item =>
+    item.value.toLowerCase() === valorNormalizado.toLowerCase() ||
+    item.textContent.trim().toLowerCase() === valorNormalizado.toLowerCase()
+  );
+  if(opcion){
+    el.value = opcion.value;
+    return;
+  }
+  if(!valorNormalizado){
+    el.value = '';
+    return;
+  }
+
+  const opcionAlumno = document.createElement('option');
+  opcionAlumno.value = valorNormalizado;
+  opcionAlumno.textContent = valorNormalizado;
+  opcionAlumno.dataset.alumnoDynamic = 'true';
+  el.append(opcionAlumno);
+  el.value = valorNormalizado;
+}
+
 function renderMatriculaAlumnoOptions(filtro = ''){
   const select = document.getElementById('ci-mat-alumno-registrado');
   const busqueda = document.getElementById('ci-mat-buscar-alumno');
@@ -184,7 +215,7 @@ function cargarAlumnoMatriculaSeleccionado(){
   Object.entries(campos).forEach(([id, value]) => {
     const el = document.getElementById(id);
     if(!el) return;
-    el.value = value;
+    asignarCampoAlumnoMatricula(id, value);
   });
 
   bloquearCamposAlumnoMatricula(true);
