@@ -16,6 +16,7 @@ DROP TABLE IF EXISTS respuesta_reclamo;
 DROP TABLE IF EXISTS constancia;
 DROP TABLE IF EXISTS pago;
 DROP TABLE IF EXISTS reclamo;
+DROP TABLE IF EXISTS apoderado;
 DROP TABLE IF EXISTS asistencia;
 DROP TABLE IF EXISTS calificacion;
 DROP TABLE IF EXISTS matricula;
@@ -35,10 +36,30 @@ CREATE TABLE alumno (
     correo VARCHAR(150) NULL,
     telefono VARCHAR(20) NULL,
     fechaNacimiento DATE NULL,
+    sexo VARCHAR(20) NULL,
+    procedencia VARCHAR(100) NULL,
+    direccion VARCHAR(255) NULL,
     estado VARCHAR(20) NULL DEFAULT 'activo',
     PRIMARY KEY (idAlumno),
     UNIQUE KEY uq_alumno_dni (dni),
     UNIQUE KEY uq_alumno_correo (correo)
+) ENGINE=InnoDB;
+
+-- Datos de contacto ficticios de un apoderado por alumno.
+CREATE TABLE apoderado (
+    idApoderado INT NOT NULL AUTO_INCREMENT,
+    idAlumno INT NOT NULL,
+    nombre VARCHAR(150) NOT NULL,
+    dni VARCHAR(15) NOT NULL,
+    telefono VARCHAR(20) NOT NULL,
+    correo VARCHAR(150) NOT NULL,
+    observaciones VARCHAR(255) NULL,
+    PRIMARY KEY (idApoderado),
+    UNIQUE KEY uq_apoderado_alumno (idAlumno),
+    UNIQUE KEY uq_apoderado_dni (dni),
+    CONSTRAINT fk_apoderado_alumno FOREIGN KEY (idAlumno)
+        REFERENCES alumno (idAlumno)
+        ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB;
 
 -- Docentes responsables de las secciones.
@@ -270,19 +291,33 @@ CREATE TABLE tarea (
 -- Periodo de referencia: 2026-II
 -- =============================================================
 
-INSERT INTO alumno (idAlumno, nombre, apellido, grupo, dni, correo, telefono, fechaNacimiento, estado) VALUES
-(1, 'Valeria', 'Castillo Rojas', 'A1', '74125896', 'valeria.castillo@academiadecam.edu.pe', '987654321', '2004-03-18', 'activo'),
-(2, 'Diego', 'Mendoza Salazar', 'B1', '72841653', 'diego.mendoza@academiadecam.edu.pe', '986321450', '2003-11-07', 'activo'),
-(3, 'Camila', 'Torres Huaman', 'A2', '75630981', 'camila.torres@academiadecam.edu.pe', '985147236', '2005-01-25', 'activo'),
-(4, 'Mateo', 'Quispe Navarro', 'B2', '71984562', 'mateo.quispe@academiadecam.edu.pe', '984236517', '2002-08-12', 'activo'),
-(5, 'Luciana', 'Paredes Flores', 'A3', '76851420', 'luciana.paredes@academiadecam.edu.pe', '983741526', '2004-06-30', 'activo'),
-(6, 'Sebastian', 'Vargas Leon', 'B3', '73419685', 'sebastian.vargas@academiadecam.edu.pe', '982654713', '2003-04-16', 'activo'),
-(7, 'Andrea', 'Salinas Vega', 'A4', '78204519', 'andrea.salinas@academiadecam.edu.pe', '981563742', '2005-09-21', 'activo'),
-(8, 'Nicolas', 'Fernandez Ruiz', 'B4', '70541863', 'nicolas.fernandez@academiadecam.edu.pe', '980472631', '2002-12-03', 'suspendido'),
-(9, 'Renata', 'Flores Medina', 'A5', '71620384', 'renata.flores@academiadecam.edu.pe', '979851264', '2004-10-11', 'activo'),
-(10, 'Gabriel', 'Cruz Paredes', 'B5', '74851629', 'gabriel.cruz@academiadecam.edu.pe', '978642315', '2003-02-27', 'activo'),
-(11, 'Sofia', 'Mamani Rios', 'A6', '76984512', 'sofia.mamani@academiadecam.edu.pe', '977531426', '2005-07-19', 'activo'),
-(12, 'Bruno', 'Herrera Luna', 'B6', '78310456', 'bruno.herrera@academiadecam.edu.pe', '976420531', '2004-01-09', 'activo');
+INSERT INTO alumno (idAlumno, nombre, apellido, grupo, dni, correo, telefono, fechaNacimiento, sexo, procedencia, direccion, estado) VALUES
+(1, 'Valeria', 'Castillo Rojas', 'A1', '74125896', 'valeria.castillo@academiadecam.edu.pe', '987654321', '2004-03-18', 'Femenino', 'Comas, Lima', 'Av. Los Alisos 184, Comas, Lima', 'activo'),
+(2, 'Diego', 'Mendoza Salazar', 'B1', '72841653', 'diego.mendoza@academiadecam.edu.pe', '986321450', '2003-11-07', 'Masculino', 'San Juan de Lurigancho, Lima', 'Jr. Las Palmeras 527, San Juan de Lurigancho, Lima', 'activo'),
+(3, 'Camila', 'Torres Huaman', 'A2', '75630981', 'camila.torres@academiadecam.edu.pe', '985147236', '2005-01-25', 'Femenino', 'Villa El Salvador, Lima', 'Mz. D Lt. 16, sector 3, Villa El Salvador, Lima', 'activo'),
+(4, 'Mateo', 'Quispe Navarro', 'B2', '71984562', 'mateo.quispe@academiadecam.edu.pe', '984236517', '2002-08-12', 'Masculino', 'Ate, Lima', 'Calle Los Nogales 238, Ate, Lima', 'activo'),
+(5, 'Luciana', 'Paredes Flores', 'A3', '76851420', 'luciana.paredes@academiadecam.edu.pe', '983741526', '2004-06-30', 'Femenino', 'San Miguel, Lima', 'Jr. Maranga 415, San Miguel, Lima', 'activo'),
+(6, 'Sebastian', 'Vargas Leon', 'B3', '73419685', 'sebastian.vargas@academiadecam.edu.pe', '982654713', '2003-04-16', 'Masculino', 'Los Olivos, Lima', 'Av. Las Magnolias 691, Los Olivos, Lima', 'activo'),
+(7, 'Andrea', 'Salinas Vega', 'A4', '78204519', 'andrea.salinas@academiadecam.edu.pe', '981563742', '2005-09-21', 'Femenino', 'Chorrillos, Lima', 'Calle Los Cedros 352, Chorrillos, Lima', 'activo'),
+(8, 'Nicolas', 'Fernandez Ruiz', 'B4', '70541863', 'nicolas.fernandez@academiadecam.edu.pe', '980472631', '2002-12-03', 'Masculino', 'San Martín de Porres, Lima', 'Jr. Los Pinos 804, San Martín de Porres, Lima', 'suspendido'),
+(9, 'Renata', 'Flores Medina', 'A5', '71620384', 'renata.flores@academiadecam.edu.pe', '979851264', '2004-10-11', 'Femenino', 'Santiago de Surco, Lima', 'Av. Los Álamos 126, Santiago de Surco, Lima', 'activo'),
+(10, 'Gabriel', 'Cruz Paredes', 'B5', '74851629', 'gabriel.cruz@academiadecam.edu.pe', '978642315', '2003-02-27', 'Masculino', 'Pueblo Libre, Lima', 'Jr. Bolívar 473, Pueblo Libre, Lima', 'activo'),
+(11, 'Sofia', 'Mamani Rios', 'A6', '76984512', 'sofia.mamani@academiadecam.edu.pe', '977531426', '2005-07-19', 'Femenino', 'Rímac, Lima', 'Calle Amancaes 219, Rímac, Lima', 'activo'),
+(12, 'Bruno', 'Herrera Luna', 'B6', '78310456', 'bruno.herrera@academiadecam.edu.pe', '976420531', '2004-01-09', 'Masculino', 'La Victoria, Lima', 'Av. México 638, La Victoria, Lima', 'activo');
+
+INSERT INTO apoderado (idAlumno, nombre, dni, telefono, correo, observaciones) VALUES
+(1, 'Rosa Elena Castillo', '90000001', '900100001', 'apoderado01@example.invalid', NULL),
+(2, 'Carlos Alberto Mendoza', '90000002', '900100002', 'apoderado02@example.invalid', 'Contacto de emergencia ficticio.'),
+(3, 'María Teresa Torres', '90000003', '900100003', 'apoderado03@example.invalid', NULL),
+(4, 'José Luis Quispe', '90000004', '900100004', 'apoderado04@example.invalid', 'Prefiere contacto telefónico (dato de prueba).'),
+(5, 'Patricia Flores Paredes', '90000005', '900100005', 'apoderado05@example.invalid', NULL),
+(6, 'Miguel Ángel Vargas', '90000006', '900100006', 'apoderado06@example.invalid', NULL),
+(7, 'Carmen Rosa Salinas', '90000007', '900100007', 'apoderado07@example.invalid', 'Disponible por la tarde (dato de prueba).'),
+(8, 'Javier Fernández Ruiz', '90000008', '900100008', 'apoderado08@example.invalid', NULL),
+(9, 'Elena Medina Flores', '90000009', '900100009', 'apoderado09@example.invalid', NULL),
+(10, 'Fernando Cruz Paredes', '90000010', '900100010', 'apoderado10@example.invalid', 'Contacto de emergencia ficticio.'),
+(11, 'Julia Ríos Mamani', '90000011', '900100011', 'apoderado11@example.invalid', NULL),
+(12, 'Andrés Herrera Luna', '90000012', '900100012', 'apoderado12@example.invalid', NULL);
 
 INSERT INTO docente (idDocente, nombre, apellido, especialidad, correo, telefono, estado) VALUES
 (1, 'Mariana', 'Soto Delgado', 'Programacion y bases de datos', 'mariana.soto@academiadecam.edu.pe', '976123450', 'activo'),
