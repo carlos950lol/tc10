@@ -38,4 +38,6 @@ $env:SELENIUM_BROWSER = "edge"
 
 Los casos marcados `local` no necesitan MySQL; los casos `mysql` requieren la base de datos y los datos de demostracion. Las capturas generadas durante las pruebas se guardan localmente y no se incluyen en el repositorio.
 
+Estas son pruebas de navegador con Selenium, no pruebas unitarias. Para reducir el tiempo de ejecucion, reutilizan una instancia del navegador y limpian cookies y almacenamiento entre casos.
+
 El esquema de `sistema_academico.sql` incluye sexo, procedencia y direccion para los alumnos, y una tabla `apoderado` relacionada con cada alumno. Los contactos incluidos son datos ficticios para pruebas; sus correos usan el dominio reservado `example.invalid`. El script SQL reinicia las tablas y sus datos, por lo que debe usarse solo para crear o restablecer la base de demostracion.

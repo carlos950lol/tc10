@@ -4,12 +4,13 @@ import json
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
+from urllib.parse import urlsplit
 
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
 from selenium.webdriver.edge.options import Options as EdgeOptions
-from selenium.common.exceptions import WebDriverException
+from selenium.common.exceptions import NoAlertPresentException, WebDriverException
 
 
 EVIDENCE_FOLDERS = {
@@ -48,7 +49,7 @@ def mysql_available(base_url):
 
 
 @pytest.fixture
-def driver():
+def browser():
     browser = os.environ.get("SELENIUM_BROWSER", "chrome").lower()
     headless = os.environ.get("SELENIUM_HEADLESS", "1") != "0"
 
@@ -73,6 +74,27 @@ def driver():
     instance.set_page_load_timeout(30)
     yield instance
     instance.quit()
+
+
+@pytest.fixture
+def driver(browser, base_url):
+    yield browser
+
+    try:
+        browser.switch_to.alert.dismiss()
+    except NoAlertPresentException:
+        pass
+
+    browser.delete_all_cookies()
+    current_origin = urlsplit(browser.current_url)
+    app_origin = urlsplit(base_url)
+    if current_origin.scheme in {"http", "https"} and (
+        current_origin.scheme,
+        current_origin.netloc,
+    ) == (app_origin.scheme, app_origin.netloc):
+        browser.execute_script(
+            "window.localStorage.clear(); window.sessionStorage.clear();"
+        )
 
 
 @pytest.hookimpl(hookwrapper=True)
