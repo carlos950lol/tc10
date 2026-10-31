@@ -12,9 +12,16 @@ const pool = mysql.createPool({
 async function obtenerDatosDashboard() {
   const [alumnos] = await pool.query(`
     SELECT a.*,
+      DATE_FORMAT(a.fechaNacimiento, '%Y-%m-%d') AS fechaNacimientoFormulario,
+      apo.nombre AS apoderadoNombre,
+      apo.dni AS apoderadoDni,
+      apo.telefono AS apoderadoTelefono,
+      apo.correo AS apoderadoCorreo,
+      apo.observaciones AS apoderadoObservaciones,
       COALESCE(cal.promedio, 0) AS promedio,
       COALESCE(asi.asistencia, 100) AS asistencia
     FROM alumno a
+    LEFT JOIN apoderado apo ON apo.idAlumno = a.idAlumno
     LEFT JOIN (
       SELECT idAlumno, ROUND(AVG(nota), 1) AS promedio
       FROM calificacion GROUP BY idAlumno

@@ -28,7 +28,7 @@ async function loadDataStore(){
     }));
     allMatriculas=(data.matriculas||[]).map(m=>({id:m.idMatricula,alumnoId:m.idAlumno,nro:'MAT-'+String(m.idMatricula).padStart(4,'0'),nombre:m.nombreAlumno,grupo:m.grupo||'Sin grupo',seccion:m.nombreSeccion||'Sin sección',anio:m.periodoAcademico,fecha:m.fecha,estado:m.estado}));
     allReclamos=(data.reclamos||[]).map(r=>({id:r.idReclamo,asunto:r.motivo,tipo:'academico',prioridad:r.prioridad||'normal',desc:r.descripcion||'',autor:r.nombreAlumno,fecha:r.fecha,estado:r.estado==='en_revision'?'revision':r.estado}));
-    allRegistros=[...(data.alumnos||[]).map(a=>({id:'alumno-'+a.idAlumno,nombre:`${a.nombre} ${a.apellido}`.trim(),tipo:'alumno',dni:a.dni,email:a.correo||'',tel:a.telefono||'',fechanac:a.fechaNacimiento||'',sexo:a.sexo||'',direccion:a.direccion||'',fecha:'Base de datos'})),...(data.docentes||[]).map(d=>({id:'docente-'+d.idDocente,nombre:`${d.nombre} ${d.apellido}`.trim(),tipo:'docente',email:d.correo||'',tel:d.telefono||'',fecha:'Base de datos'}))];
+    allRegistros=[...(data.alumnos||[]).map(a=>({id:'alumno-'+a.idAlumno,nombre:`${a.nombre} ${a.apellido}`.trim(),nombres:a.nombre||'',apellido:a.apellido||'',tipo:'alumno',dni:a.dni,email:a.correo||'',tel:a.telefono||'',fechanac:a.fechaNacimientoFormulario||a.fechaNacimiento||'',sexo:a.sexo||'',procedencia:a.procedencia||'',direccion:a.direccion||'',apoderado:a.apoderadoNombre||'',apoDni:a.apoderadoDni||'',apoTel:a.apoderadoTelefono||'',apoEmail:a.apoderadoCorreo||'',obs:a.apoderadoObservaciones||'',fecha:'Base de datos'})),...(data.docentes||[]).map(d=>({id:'docente-'+d.idDocente,nombre:`${d.nombre} ${d.apellido}`.trim(),tipo:'docente',email:d.correo||'',tel:d.telefono||'',fecha:'Base de datos'}))];
     dashboardStats=data.stats||{};
     localStorage.setItem(DATA_KEY,JSON.stringify({allStudents,allGrades,allTasks,allMatriculas,allReclamos,allRegistros}));
   }catch(error){console.warn('No se pudo cargar MySQL; se usa la copia local.',error);}
@@ -66,4 +66,3 @@ async function checkApiConnection(){
   }
   updateDataStatus();
 }
-
