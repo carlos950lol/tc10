@@ -441,23 +441,39 @@ function buscarMatriculaPorCodigo(){
   });
 }
 
-function saveRegistro(){
+async function saveRegistro(){
   const nombres = document.getElementById('reg-nombres')?.value.trim() || '';
   const apellidos = document.getElementById('reg-apellidos')?.value.trim() || '';
+  const tipo = document.getElementById('reg-tipo').value;
+  const dni = document.getElementById('reg-dni').value.trim();
+  const validation = tipo === 'alumno'
+    ? validarRegistroAlumno({nombres, apellidos, dni})
+    : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.' : '');
+  if(validation){alert(validation);return;}
   const nombre = buildNombreCompleto(nombres, apellidos);
-  if(!nombre){alert('El nombre y apellido son obligatorios');return;}
   const reg = {
     id: Date.now(),
     nombre,
     nombres,
     apellido: apellidos,
-    tipo: document.getElementById('reg-tipo').value,
-    dni: document.getElementById('reg-dni').value.trim(),
+    tipo,
+    dni,
     email: document.getElementById('reg-email').value.trim(),
     tel: document.getElementById('reg-tel').value.trim(),
     fecha: new Date().toLocaleDateString('es-PE')
   };
-  allRegistros.push(reg);
+  try{
+    const resultado=tipo==='alumno'?await guardarAlumnoEnServidor(reg):null;
+    allRegistros.push(reg);
+    saveDataStore();
+    if(resultado?.almacenamiento==='local'){
+      alert('Registro guardado en este navegador; no se pudo guardar en MySQL.');
+    }
+  }catch(error){
+    console.error('No se pudo guardar el registro.',error);
+    alert(error.message||'No se pudo guardar el registro.');
+    return;
+  }
   renderRegistro();
   renderMatriculaAlumnoOptions();
   closeModal('modal-new-registro');
@@ -475,12 +491,24 @@ function toggleRegistroAlumnoFields(){
     if(el) el.style.display = isAlumno ? '' : 'none';
   });
 }
-function submitRegistroForm(){
+function mostrarErrorRegistro(mensaje){
+  const error=document.getElementById('ci-reg-error');
+  if(error){
+    error.textContent=mensaje;
+    error.hidden=!mensaje;
+  }
+}
+async function submitRegistroForm(){
   const nombres = document.getElementById('ci-reg-nombres')?.value.trim() || '';
   const apellidos = document.getElementById('ci-reg-apellidos')?.value.trim() || '';
-  const nombre = buildNombreCompleto(nombres, apellidos);
-  if(!nombre){alert('Los nombres y apellidos son obligatorios');return;}
   const tipo = document.getElementById('ci-reg-tipo').value;
+  const dni = document.getElementById('ci-reg-dni').value.trim();
+  const validation = tipo === 'alumno'
+    ? validarRegistroAlumno({nombres, apellidos, dni})
+    : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.' : '');
+  mostrarErrorRegistro(validation);
+  if(validation)return;
+  const nombre = buildNombreCompleto(nombres, apellidos);
   const nivel = document.getElementById('ci-reg-nivel')?.value||'';
   const gradoNum = document.getElementById('ci-reg-grado')?.value||'';
   const seccionLetra = document.getElementById('ci-reg-seccionletra')?.value||'';
@@ -491,7 +519,7 @@ function submitRegistroForm(){
     nombres,
     apellido: apellidos,
     tipo,
-    dni: document.getElementById('ci-reg-dni').value.trim(),
+    dni,
     fechanac: document.getElementById('ci-reg-fechanac')?.value||'',
     sexo: document.getElementById('ci-reg-sexo')?.value||'',
     nivel,
@@ -505,7 +533,31 @@ function submitRegistroForm(){
     apoTel: document.getElementById('ci-reg-apo-tel')?.value.trim()||'',
     fecha: new Date().toLocaleDateString('es-PE')
   };
-  allRegistros.push(reg);
+  const button=document.querySelector("#page-registro button[onclick='submitRegistroForm()']");
+  if(button)button.disabled=true;
+  let almacenamiento='local';
+  try{
+    if(tipo==='alumno'){
+      const resultado=await guardarAlumnoEnServidor(reg);
+      almacenamiento=resultado.almacenamiento;
+    }
+    allRegistros.push(reg);
+    saveDataStore();
+  }catch(error){
+    console.error('No se pudo guardar el registro.',error);
+    mostrarErrorRegistro(error.message||'No se pudo guardar el registro.');
+    return;
+  }finally{
+    if(button)button.disabled=false;
+  }
+  mostrarErrorRegistro('');
+  const feedback=document.getElementById('ci-reg-feedback');
+  if(feedback){
+    feedback.textContent=almacenamiento==='mysql'
+      ? 'Registro guardado en la base de datos.'
+      : 'Registro guardado en este navegador; no se pudo guardar en MySQL.';
+    feedback.hidden=false;
+  }
   renderRegistro();
   renderMatriculaAlumnoOptions();
   updateRegistroCount();
@@ -549,7 +601,7 @@ function renderRegistro(){
     return;
   }
   const tipoBadge = t=>({alumno:'b-blue',docente:'b-green',administrativo:'b-amber'}[t]||'b-gray');
-  el.innerHTML=data.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="showDtRegistro(allRegistros.find(x=>x.id===${r.id}))">
+  el.innerHTML=data.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="showDtRegistro(allRegistros[${allRegistros.indexOf(r)}])">
     <div><div style="font-size:13px;font-weight:500;color:var(--navy)">${r.nombre}</div><div style="font-size:12px;color:var(--muted)">${r.email||r.tel||r.dni||'—'}</div></div>
     <div style="display:flex;align-items:center;gap:8px"><span class="badge ${tipoBadge(r.tipo)}">${r.tipo.charAt(0).toUpperCase()+r.tipo.slice(1)}</span><span style="font-size:11px;color:var(--muted)">${r.fecha}</span></div>
   </div>`).join('');

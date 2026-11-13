@@ -3,11 +3,13 @@ import uuid
 import pytest
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.ui import Select
+from selenium.webdriver.support.ui import Select, WebDriverWait
 
 from tc10_pruebas.screens.registro_alumno.helpers import (
     open_registration_page,
+    registration_error,
     registration_count_for_dni,
+    register_student_via_api,
     submit_student_registration,
 )
 from tc10_pruebas.selenium_helpers import (
@@ -81,22 +83,32 @@ def test_tc002_busqueda_de_alumno_inexistente(driver, base_url):
 def test_tc003_rechaza_registro_sin_apellidos(driver, base_url):
     open_registration_page(driver, base_url)
     names = f"Ana TC003-{uuid.uuid4().hex[:8]}"
-    submit_student_registration(driver, names=names, surnames="", dni="73000041")
+    submit_student_registration(
+        driver, names=names, surnames="", dni="73000041", local_only=True
+    )
 
-    if names in driver.find_element(By.ID, "registro-list").text:
-        pytest.xfail("DEF-001: el registro acepta apellidos vacíos.")
+    assert "apellidos" in registration_error(driver).lower()
     assert names not in driver.find_element(By.ID, "registro-list").text
+    response = register_student_via_api(
+        driver, names=names, surnames="", dni="73000041"
+    )
+    assert response["status"] == 400
 
 
 @pytest.mark.local
 def test_tc004_rechaza_documento_alfanumerico(driver, base_url):
     open_registration_page(driver, base_url)
     names = f"Ana TC004-{uuid.uuid4().hex[:8]}"
-    submit_student_registration(driver, names=names, surnames="Prueba", dni="ABC123")
+    submit_student_registration(
+        driver, names=names, surnames="Prueba", dni="ABC123", local_only=True
+    )
 
-    if names in driver.find_element(By.ID, "registro-list").text:
-        pytest.xfail("DEF-002: el registro acepta un documento alfanumérico.")
+    assert "8 dígitos" in registration_error(driver)
     assert names not in driver.find_element(By.ID, "registro-list").text
+    response = register_student_via_api(
+        driver, names=names, surnames="Prueba", dni="ABC123"
+    )
+    assert response["status"] == 400
 
 
 @pytest.mark.mysql
@@ -105,15 +117,16 @@ def test_tc005_rechaza_documento_duplicado(driver, base_url, mysql_available):
     existing_dni = "74125896"
     initial_count = registration_count_for_dni(driver, existing_dni)
     assert initial_count > 0, "El DNI de referencia debe existir en la base demostrativa."
-    names = f"Duplicado TC005-{uuid.uuid4().hex[:8]}"
-
-    submit_student_registration(
-        driver, names=names, surnames="Prueba", dni=existing_dni
+    response = register_student_via_api(
+        driver,
+        names=f"Duplicado TC005-{uuid.uuid4().hex[:8]}",
+        surnames="Prueba",
+        dni=existing_dni,
     )
 
+    assert response["status"] == 409
+    assert "dni" in response["body"]["error"].lower()
     final_count = registration_count_for_dni(driver, existing_dni)
-    if final_count > initial_count:
-        pytest.xfail("DEF-003: el sistema permite registrar un DNI duplicado.")
     assert final_count == initial_count
 
 
@@ -229,7 +242,7 @@ def test_tc013_alumno_persiste_despues_de_actualizar(
 ):
     wait = open_registration_page(driver, base_url)
     names = f"Persistencia TC013-{uuid.uuid4().hex[:8]}"
-    dni = "73000042"
+    dni = f"{70000000 + uuid.uuid4().int % 9999999:08d}"
     submit_student_registration(driver, names=names, surnames="Prueba", dni=dni)
     wait.until(EC.text_to_be_present_in_element((By.ID, "registro-list"), names))
     driver.refresh()
@@ -271,10 +284,14 @@ def test_tc016_registro_conserva_tildes_y_enie(driver, base_url):
     open_registration_page(driver, base_url)
     names = f"José TC016-{uuid.uuid4().hex[:8]}"
     full_name = f"{names} Peña Núñez"
+    dni = f"{70000000 + uuid.uuid4().int % 9999999:08d}"
     submit_student_registration(
-        driver, names=names, surnames="Peña Núñez", dni="73000043"
+        driver, names=names, surnames="Peña Núñez", dni=dni, local_only=True
     )
 
+    WebDriverWait(driver, 10).until(
+        EC.text_to_be_present_in_element((By.ID, "registro-list"), full_name)
+    )
     assert full_name in driver.find_element(By.ID, "dt-registro-detalle").text
     assert full_name in driver.find_element(By.ID, "registro-list").text
 
@@ -327,3 +344,70 @@ def test_tc020_estudiante_no_accede_al_modulo_ni_a_la_api(driver, base_url):
     response = _unauthenticated_api_status(driver, "/api/matricula")
     assert response["status"] == 403
     assert "matriculas" not in response.get("body", "").lower()
+
+
+@pytest.mark.local
+def test_tc021_rechaza_dni_duplicado_en_registro_local(driver, base_url):
+    open_registration_page(driver, base_url)
+    dni = f"{70000000 + uuid.uuid4().int % 9999999:08d}"
+    submit_student_registration(
+        driver,
+        names="Primera TC021",
+        surnames="Prueba",
+        dni=dni,
+        local_only=True,
+    )
+    WebDriverWait(driver, 10).until(
+        EC.text_to_be_present_in_element((By.ID, "registro-list"), "Primera TC021")
+    )
+    initial_count = registration_count_for_dni(driver, dni)
+
+    submit_student_registration(
+        driver,
+        names="Duplicada TC021",
+        surnames="Prueba",
+        dni=dni,
+        local_only=True,
+    )
+
+    assert "ya existe" in registration_error(driver).lower()
+    assert "Duplicada TC021" not in driver.find_element(By.ID, "registro-list").text
+    assert registration_count_for_dni(driver, dni) == initial_count == 1
+
+
+@pytest.mark.local
+def test_tc022_alumno_persiste_tras_actualizar_y_volver_a_iniciar_sesion(
+    driver, base_url
+):
+    wait = open_registration_page(driver, base_url)
+    names = f"Persistencia TC022-{uuid.uuid4().hex[:8]}"
+    dni = f"{70000000 + uuid.uuid4().int % 9999999:08d}"
+    submit_student_registration(
+        driver,
+        names=names,
+        surnames="Prueba",
+        dni=dni,
+        local_only=True,
+    )
+    WebDriverWait(driver, 10).until(
+        EC.text_to_be_present_in_element((By.ID, "registro-list"), names)
+    )
+    stored = driver.execute_script(
+        "return JSON.parse(localStorage.getItem('academia_decam_data_v2') || '{}').allRegistros || [];"
+    )
+    assert any(registro.get("dni") == dni for registro in stored)
+
+    driver.refresh()
+    wait = login_as(driver, base_url, USERS[2])
+    stored = driver.execute_script(
+        "return JSON.parse(localStorage.getItem('academia_decam_data_v2') || '{}').allRegistros || [];"
+    )
+    assert any(registro.get("dni") == dni for registro in stored)
+    open_registration_page(driver, base_url)
+    assert names in driver.find_element(By.ID, "registro-list").text
+
+    driver.execute_async_script("doLogout().then(arguments[0]);")
+    wait.until(EC.visibility_of_element_located((By.ID, "login-screen")))
+    login_as(driver, base_url, USERS[2])
+    open_registration_page(driver, base_url)
+    assert names in driver.find_element(By.ID, "registro-list").text

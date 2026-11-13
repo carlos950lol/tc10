@@ -126,12 +126,14 @@ def pytest_runtest_makereport(item, call):
     evidence_dir.mkdir(parents=True, exist_ok=True)
     parameter = item.name[len(test_name):].strip("[]")
     safe_parameter = re.sub(r"[^A-Za-z0-9_.-]+", "_", parameter).strip("_")
-    if report.failed or expected_failure:
-        result = "FALLO"
+    if expected_failure:
+        result = "XFAIL"
+    elif report.failed:
+        result = "FAILED"
     elif blocked:
-        result = "BLOQUEADO"
+        result = "SKIPPED"
     else:
-        result = "PASO"
+        result = "PASSED"
     file_stem = module_name
     if folder in {"screens/registro_alumno", "screens/tc10"} or module_name in {
         "demo_05_busqueda_alumno_inexistente",

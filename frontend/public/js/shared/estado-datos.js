@@ -28,7 +28,14 @@ async function loadDataStore(){
     }));
     allMatriculas=(data.matriculas||[]).map(m=>({id:m.idMatricula,alumnoId:m.idAlumno,nro:'MAT-'+String(m.idMatricula).padStart(4,'0'),nombre:m.nombreAlumno,grupo:m.grupo||'Sin grupo',seccion:m.nombreSeccion||'Sin sección',anio:m.periodoAcademico,fecha:m.fecha,estado:m.estado}));
     allReclamos=(data.reclamos||[]).map(r=>({id:r.idReclamo,asunto:r.motivo,tipo:'academico',prioridad:r.prioridad||'normal',desc:r.descripcion||'',autor:r.nombreAlumno,fecha:r.fecha,estado:r.estado==='en_revision'?'revision':r.estado}));
-    allRegistros=[...(data.alumnos||[]).map(a=>({id:'alumno-'+a.idAlumno,nombre:`${a.nombre} ${a.apellido}`.trim(),nombres:a.nombre||'',apellido:a.apellido||'',tipo:'alumno',dni:a.dni,email:a.correo||'',tel:a.telefono||'',fechanac:a.fechaNacimientoFormulario||a.fechaNacimiento||'',sexo:({masculino:'M',femenino:'F'}[String(a.sexo||'').trim().toLowerCase()]||a.sexo||''),procedencia:a.procedencia||'',direccion:a.direccion||'',apoderado:a.apoderadoNombre||'',apoDni:a.apoderadoDni||'',apoTel:a.apoderadoTelefono||'',apoEmail:a.apoderadoCorreo||'',obs:a.apoderadoObservaciones||'',fecha:'Base de datos'})),...(data.docentes||[]).map(d=>({id:'docente-'+d.idDocente,nombre:`${d.nombre} ${d.apellido}`.trim(),tipo:'docente',email:d.correo||'',tel:d.telefono||'',fecha:'Base de datos'}))];
+    const registrosRemotos=[...(data.alumnos||[]).map(a=>({id:'alumno-'+a.idAlumno,nombre:`${a.nombre} ${a.apellido}`.trim(),nombres:a.nombre||'',apellido:a.apellido||'',tipo:'alumno',dni:a.dni,email:a.correo||'',tel:a.telefono||'',fechanac:a.fechaNacimientoFormulario||a.fechaNacimiento||'',sexo:({masculino:'M',femenino:'F'}[String(a.sexo||'').trim().toLowerCase()]||a.sexo||''),procedencia:a.procedencia||'',direccion:a.direccion||'',apoderado:a.apoderadoNombre||'',apoDni:a.apoderadoDni||'',apoTel:a.apoderadoTelefono||'',apoEmail:a.apoderadoCorreo||'',obs:a.apoderadoObservaciones||'',fecha:'Base de datos'})),...(data.docentes||[]).map(d=>({id:'docente-'+d.idDocente,nombre:`${d.nombre} ${d.apellido}`.trim(),tipo:'docente',email:d.correo||'',tel:d.telefono||'',fecha:'Base de datos'}))];
+    const idsRemotos=new Set(registrosRemotos.map(registro=>String(registro.id)));
+    const dniRemotos=new Set(registrosRemotos.filter(registro=>registro.tipo==='alumno').map(registro=>String(registro.dni||'').trim()));
+    const registrosLocales=allRegistros.filter(registro=>
+      !idsRemotos.has(String(registro.id))&&
+      !(registro.tipo==='alumno'&&dniRemotos.has(String(registro.dni||'').trim()))
+    );
+    allRegistros=[...registrosRemotos,...registrosLocales];
     dashboardStats=data.stats||{};
     localStorage.setItem(DATA_KEY,JSON.stringify({allStudents,allGrades,allTasks,allMatriculas,allReclamos,allRegistros}));
   }catch(error){console.warn('No se pudo cargar MySQL; se usa la copia local.',error);}
@@ -41,6 +48,37 @@ function saveDataStore(){
   localStorage.setItem(DATA_KEY,JSON.stringify(payload));
   updateDataStatus();
   if(CFG.apiUrl) syncDataWithApi(payload);
+}
+async function guardarAlumnoEnServidor(registro){
+  const grado=document.getElementById('ci-reg-grado')?.value||'';
+  const seccion=document.getElementById('ci-reg-seccionletra')?.value||'';
+  const grupo=/^[AB]$/.test(seccion)&&/^[1-6]$/.test(grado)?`${seccion}${grado}`:null;
+  let response;
+  try{
+    response=await fetch(CFG.apiUrl+'/api/alumno',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        nombre:registro.nombres,
+        apellido:registro.apellido,
+        dni:registro.dni,
+        grupo,
+        correo:registro.email,
+        telefono:registro.tel,
+        fechaNacimiento:registro.fechanac,
+        sexo:registro.sexo,
+        direccion:registro.direccion
+      })
+    });
+  }catch(error){
+    if(error instanceof TypeError)return {almacenamiento:'local'};
+    throw error;
+  }
+  if(response.status===503)return {almacenamiento:'local'};
+  const result=await response.json();
+  if(response.status===409||response.status===400)throw new Error(result.error||'No se pudo validar el registro.');
+  if(!response.ok)throw new Error(result.error||`No se pudo guardar el alumno (HTTP ${response.status}).`);
+  return {almacenamiento:'mysql',id:result.id};
 }
 function updateDataStatus(){
   const status=document.getElementById('data-status');

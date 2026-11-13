@@ -31,7 +31,7 @@ CREATE TABLE alumno (
     idAlumno INT NOT NULL AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
-    grupo ENUM('A1','B1','A2','B2','A3','B3','A4','B4','A5','B5','A6','B6') NOT NULL,
+    grupo ENUM('A1','B1','A2','B2','A3','B3','A4','B4','A5','B5','A6','B6') NULL,
     dni VARCHAR(15) NOT NULL,
     correo VARCHAR(150) NULL,
     telefono VARCHAR(20) NULL,

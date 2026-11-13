@@ -307,6 +307,7 @@ function showPage(id){
   document.getElementById('main-content').scrollTop=0;
   if(id==='asistencia'&&CU.role==='student')buildStudentAttCalendar();
   if(id==='calificaciones'){buildGradesHeader();renderGrades(allGrades);}
+  if(id==='registro')renderRegistro();
   if(id==='alumnos')filterStudents('');
   if(id==='tareas')renderTasks();
   if(id==='matricula')renderMatriculaAlumnoOptions();

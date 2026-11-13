@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { randomBytes } = require('crypto');
 const { pool, obtenerDatosDashboard, mysqlUnavailable } = require('./consultas');
+const { registrarAlumno } = require('./servicios/alumnos');
 
 const PORT = Number(process.env.API_PORT || 3000);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
@@ -164,7 +165,31 @@ async function request(req, res) {
       return json(res, 401, {error: 'Se requiere iniciar sesión.'});
     }
     if (url.pathname === '/api/dashboard' && req.method === 'GET') {
-      return json(res, 200, await obtenerDatosDashboard());
+      try {
+        return json(res, 200, await obtenerDatosDashboard());
+      } catch (error) {
+        if (mysqlUnavailable(error)) {
+          return json(res, 503, {error: 'Base de datos no disponible.'});
+        }
+        throw error;
+      }
+    }
+    if (url.pathname === '/api/alumno' && req.method === 'POST') {
+      if (session.role !== 'jefe') {
+        return json(res, 403, {error: 'Tu rol no tiene permiso para registrar alumnos.'});
+      }
+      try {
+        const result = await registrarAlumno(pool, await body(req));
+        if (result.status) {
+          return json(res, result.status, {error: result.error});
+        }
+        return json(res, 201, {id: result.id, mensaje: 'Alumno registrado.'});
+      } catch (error) {
+        if (mysqlUnavailable(error)) {
+          return json(res, 503, {error: 'Base de datos no disponible.'});
+        }
+        throw error;
+      }
     }
     const tabla = tableFrom(url.pathname);
     if (!tabla) return json(res, 404, {error: 'Ruta no encontrada'});
