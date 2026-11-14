@@ -22,6 +22,7 @@ def submit_student_registration(
     surnames,
     dni,
     local_only=False,
+    api_status=503,
 ):
     if local_only:
         driver.execute_script(
@@ -29,11 +30,12 @@ def submit_student_registration(
             window.__tc10OriginalFetch = window.fetch.bind(window);
             window.fetch = (input, init) => String(input).endsWith('/api/alumno')
               ? Promise.resolve(new Response(
-                  JSON.stringify({error: 'MySQL no disponible.'}),
-                  {status: 503, headers: {'Content-Type': 'application/json'}}
+                  JSON.stringify({error: 'Error controlado de prueba.'}),
+                  {status: arguments[0], headers: {'Content-Type': 'application/json'}}
                 ))
               : window.__tc10OriginalFetch(input, init);
-            """
+            """,
+            api_status,
         )
     driver.find_element(By.ID, "ci-reg-tipo").send_keys("alumno")
     driver.find_element(By.ID, "ci-reg-nombres").send_keys(names)
@@ -42,6 +44,13 @@ def submit_student_registration(
     driver.find_element(
         By.CSS_SELECTOR, "#page-registro button[onclick='submitRegistroForm()']"
     ).click()
+    if local_only:
+        driver.execute_script(
+            """
+            window.fetch = window.__tc10OriginalFetch;
+            delete window.__tc10OriginalFetch;
+            """
+        )
 
 
 def registration_error(driver):
@@ -50,11 +59,20 @@ def registration_error(driver):
     )
 
 
+def assert_red_warning(driver, element_id):
+    aviso = driver.find_element(By.ID, element_id)
+    assert aviso.is_displayed()
+    assert aviso.get_attribute("role") == "alert"
+    assert driver.execute_script(
+        "return getComputedStyle(arguments[0]).color;", aviso
+    ) == "rgb(185, 28, 28)"
+
+
 def register_student_via_api(driver, *, names, surnames, dni):
     return driver.execute_async_script(
         """
         const done = arguments[arguments.length - 1];
-        window.__tc10OriginalFetch('/api/alumno', {
+        fetch('/api/alumno', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({

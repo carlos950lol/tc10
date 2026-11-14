@@ -5,7 +5,7 @@ function validarRegistroAlumno({ nombres, apellidos, dni }, registros = allRegis
   if (registros.some(registro =>
     registro.tipo === 'alumno' && String(registro.dni || '').trim() === dni.trim()
   )) {
-    return 'Ya existe un alumno registrado con ese DNI.';
+    return 'DNI ya existente.';
   }
   return '';
 }

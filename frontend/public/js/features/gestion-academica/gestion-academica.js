@@ -16,12 +16,36 @@ function separarNombreCompleto(nombreCompleto){
   };
 }
 
+function mostrarAvisoFormulario(id, mensaje, tipo = 'error'){
+  const aviso = document.getElementById(id);
+  if(!aviso) return;
+  aviso.textContent = mensaje;
+  aviso.hidden = !mensaje;
+  const esExito = tipo === 'success';
+  aviso.style.color = esExito ? '#166534' : '#b91c1c';
+  aviso.style.backgroundColor = esExito ? '#f0fdf4' : '#fef2f2';
+  aviso.style.border = esExito ? '1px solid #bbf7d0' : '1px solid #fecaca';
+  aviso.style.borderRadius = '8px';
+  aviso.style.padding = '9px 12px';
+  aviso.style.fontWeight = '600';
+  aviso.setAttribute('role', tipo === 'success' ? 'status' : 'alert');
+  aviso.setAttribute('aria-live', tipo === 'success' ? 'polite' : 'assertive');
+}
+
+function mostrarErrorMatricula(mensaje){
+  mostrarAvisoFormulario('ci-mat-error', mensaje);
+}
+
 function saveMatricula(){
   const nombres = document.getElementById('mat-nombres')?.value.trim() || '';
   const apellidos = document.getElementById('mat-apellidos')?.value.trim() || '';
   const nombre = buildNombreCompleto(nombres, apellidos);
   const seccion = document.getElementById('mat-seccion').value;
-  if(!nombre || !seccion){alert('Completa los campos obligatorios (*)');return;}
+  mostrarAvisoFormulario('mat-error', '');
+  if(!nombres || !apellidos || !seccion){
+    mostrarAvisoFormulario('mat-error', 'Completa nombres, apellidos y sección para registrar la matrícula.');
+    return;
+  }
   const mat = {
     id: Date.now(),
     nro: 'MAT-' + String(allMatriculas.length+1).padStart(4,'0'),
@@ -223,6 +247,7 @@ function cargarAlumnoMatriculaSeleccionado(){
 
 function resetMatriculaAlumno(){
   ['ci-mat-buscar-alumno','ci-mat-nombres','ci-mat-apellidos','ci-mat-dni','ci-mat-fechanac','ci-mat-direccion','ci-mat-apoderado','ci-mat-apo-dni','ci-mat-apo-tel','ci-mat-apo-email','ci-mat-obs','ci-mat-sexo','ci-mat-procedencia','ci-mat-alumno-registrado'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  mostrarErrorMatricula('');
   const sugerencias = document.getElementById('ci-mat-alumno-sugerencias');
   if(sugerencias){
     sugerencias.style.display = 'none';
@@ -234,13 +259,14 @@ function resetMatriculaAlumno(){
 }
 
 function showMatriculaStep(step){
+  mostrarErrorMatricula('');
   if(step === 2){
     const alumno = document.getElementById('ci-mat-alumno-registrado')?.value;
     const nivel = document.getElementById('ci-mat-nivel')?.value;
     const grado = document.getElementById('ci-mat-grado')?.value;
     const seccion = document.getElementById('ci-mat-seccion')?.value;
     if(!alumno || !nivel || !grado || !seccion){
-      alert('Completa el alumno, nivel, grado y sección antes de continuar.');
+      mostrarErrorMatricula('Selecciona un alumno y completa nivel, grado y sección antes de continuar.');
       return;
     }
   }
@@ -283,10 +309,11 @@ function showMatriculaStep(step){
 }
 // Formulario inline CI_Matricula
 function submitMatriculaForm(){
+  mostrarErrorMatricula('');
   const select = document.getElementById('ci-mat-alumno-registrado');
   const alumnoSeleccionado = select && select.value ? allRegistros.find(r => String(r.id) === String(select.value) && r.tipo === 'alumno') : null;
   if(!alumnoSeleccionado){
-    alert('Debes seleccionar un alumno ya registrado. No se permite registrar uno nuevo desde matrícula.');
+    mostrarErrorMatricula('Selecciona un alumno registrado antes de confirmar la matrícula.');
     return;
   }
 
@@ -295,7 +322,10 @@ function submitMatriculaForm(){
   const nivel = document.getElementById('ci-mat-nivel')?.value;
   const grado = document.getElementById('ci-mat-grado')?.value;
   const seccionLetra = document.getElementById('ci-mat-seccion')?.value;
-  if(!nombre || !nivel || !grado || !seccionLetra){alert('Debe seleccionar el alumno, el nivel, el grado y la sección.');return;}
+  if(!nombre || !nivel || !grado || !seccionLetra){
+    mostrarErrorMatricula('Completa nivel, grado y sección para confirmar la matrícula.');
+    return;
+  }
 
   const seccion = nivel.charAt(0) + grado + '°' + seccionLetra;
   const mat = {
@@ -442,6 +472,8 @@ function buscarMatriculaPorCodigo(){
 }
 
 async function saveRegistro(){
+  mostrarAvisoFormulario('reg-error', '');
+  mostrarAvisoFormulario('ci-reg-feedback', '');
   const nombres = document.getElementById('reg-nombres')?.value.trim() || '';
   const apellidos = document.getElementById('reg-apellidos')?.value.trim() || '';
   const tipo = document.getElementById('reg-tipo').value;
@@ -449,7 +481,10 @@ async function saveRegistro(){
   const validation = tipo === 'alumno'
     ? validarRegistroAlumno({nombres, apellidos, dni})
     : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.' : '');
-  if(validation){alert(validation);return;}
+  if(validation){
+    mostrarAvisoFormulario('reg-error', validation);
+    return;
+  }
   const nombre = buildNombreCompleto(nombres, apellidos);
   const reg = {
     id: Date.now(),
@@ -467,11 +502,11 @@ async function saveRegistro(){
     allRegistros.push(reg);
     saveDataStore();
     if(resultado?.almacenamiento==='local'){
-      alert('Registro guardado en este navegador; no se pudo guardar en MySQL.');
+      mostrarAvisoFormulario('ci-reg-feedback', 'Registro guardado en este navegador; no se pudo guardar en MySQL.', 'warning');
     }
   }catch(error){
     console.error('No se pudo guardar el registro.',error);
-    alert(error.message||'No se pudo guardar el registro.');
+    mostrarAvisoFormulario('reg-error', error.message||'No se pudo guardar el registro.');
     return;
   }
   renderRegistro();
@@ -492,13 +527,10 @@ function toggleRegistroAlumnoFields(){
   });
 }
 function mostrarErrorRegistro(mensaje){
-  const error=document.getElementById('ci-reg-error');
-  if(error){
-    error.textContent=mensaje;
-    error.hidden=!mensaje;
-  }
+  mostrarAvisoFormulario('ci-reg-error', mensaje);
 }
 async function submitRegistroForm(){
+  mostrarAvisoFormulario('ci-reg-feedback', '');
   const nombres = document.getElementById('ci-reg-nombres')?.value.trim() || '';
   const apellidos = document.getElementById('ci-reg-apellidos')?.value.trim() || '';
   const tipo = document.getElementById('ci-reg-tipo').value;
@@ -553,10 +585,13 @@ async function submitRegistroForm(){
   mostrarErrorRegistro('');
   const feedback=document.getElementById('ci-reg-feedback');
   if(feedback){
-    feedback.textContent=almacenamiento==='mysql'
-      ? 'Registro guardado en la base de datos.'
-      : 'Registro guardado en este navegador; no se pudo guardar en MySQL.';
-    feedback.hidden=false;
+    mostrarAvisoFormulario(
+      'ci-reg-feedback',
+      almacenamiento==='mysql'
+        ? 'Registro guardado en la base de datos.'
+        : 'Registro guardado en este navegador; no se pudo guardar en MySQL.',
+      almacenamiento==='mysql' ? 'success' : 'warning'
+    );
   }
   renderRegistro();
   renderMatriculaAlumnoOptions();
@@ -613,7 +648,11 @@ function filterRegistro(){ renderRegistro(); }
 function saveReclamo(){
   const asunto = document.getElementById('rec-asunto').value.trim();
   const desc = document.getElementById('rec-desc').value.trim();
-  if(!asunto||!desc){alert('Completa los campos obligatorios');return;}
+  if(!asunto||!desc){
+    mostrarAvisoFormulario('rec-error', 'Completa el asunto y la descripción para enviar el reclamo.');
+    return;
+  }
+  mostrarAvisoFormulario('rec-error', '');
   const rec = {
     id: Date.now(),
     asunto,

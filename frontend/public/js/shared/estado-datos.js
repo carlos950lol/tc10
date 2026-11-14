@@ -76,6 +76,7 @@ async function guardarAlumnoEnServidor(registro){
   }
   if(response.status===503)return {almacenamiento:'local'};
   const result=await response.json();
+  if(response.status===409&&/dni/i.test(result.error||''))throw new Error('DNI ya existente.');
   if(response.status===409||response.status===400)throw new Error(result.error||'No se pudo validar el registro.');
   if(!response.ok)throw new Error(result.error||`No se pudo guardar el alumno (HTTP ${response.status}).`);
   return {almacenamiento:'mysql',id:result.id};

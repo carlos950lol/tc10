@@ -9,6 +9,7 @@ from tc10_pruebas.screens.registro_alumno.helpers import (
     open_registration_page,
     registration_error,
     registration_count_for_dni,
+    assert_red_warning,
     register_student_via_api,
     submit_student_registration,
 )
@@ -42,6 +43,32 @@ def _select_existing_student(driver, wait):
     select.select_by_value(option.get_attribute("value"))
 
 
+def _prepare_matricula_flow(driver, wait, *, turno="Tarde"):
+    _select_existing_student(driver, wait)
+    student_select = Select(driver.find_element(By.ID, "ci-mat-alumno-registrado"))
+    student_id = student_select.first_selected_option.get_attribute("value")
+    student_name = driver.execute_script(
+        "return allRegistros.find(registro => String(registro.id) === arguments[0])?.nombre || '';",
+        student_id,
+    )
+    if student_id.startswith("alumno-"):
+        student_id = student_id[len("alumno-"):]
+
+    Select(driver.find_element(By.ID, "ci-mat-nivel")).select_by_value("Primaria")
+    wait.until(
+        lambda browser: not browser.find_element(By.ID, "ci-mat-grado").get_attribute("disabled")
+    )
+    Select(driver.find_element(By.ID, "ci-mat-grado")).select_by_value("1")
+    Select(driver.find_element(By.ID, "ci-mat-seccion")).select_by_value("B")
+    Select(driver.find_element(By.ID, "ci-mat-turno")).select_by_value(turno)
+    driver.find_element(
+        By.CSS_SELECTOR, "#matricula-step-1 button[onclick='showMatriculaStep(2)']"
+    ).click()
+    wait.until(EC.visibility_of_element_located((By.ID, "matricula-resumen-content")))
+    summary = driver.find_element(By.ID, "matricula-resumen-content").text
+    return student_id, student_name, summary
+
+
 def _unauthenticated_api_status(driver, path):
     return driver.execute_async_script(
         """
@@ -62,11 +89,8 @@ def test_tc001_inicio_sesion_y_modulo_matricula(driver, base_url):
     wait = login_as(driver, base_url, USERS[3])
     assert "active" in driver.find_element(By.ID, "page-dashboard").get_attribute("class").split()
     open_registration_module(driver, wait)
-
-    pytest.skip(
-        "Bloqueado: el objetivo solo valida inicio de sesión, pero el criterio exige "
-        "matricular curso/horario; además el dato ALU-NO-EXISTE contradice la precondición."
-    )
+    assert "active" in driver.find_element(By.ID, "page-matricula").get_attribute("class").split()
+    assert driver.find_element(By.ID, "ci-mat-alumno-registrado").is_displayed()
 
 
 @pytest.mark.local
@@ -88,6 +112,7 @@ def test_tc003_rechaza_registro_sin_apellidos(driver, base_url):
     )
 
     assert "apellidos" in registration_error(driver).lower()
+    assert_red_warning(driver, "ci-reg-error")
     assert names not in driver.find_element(By.ID, "registro-list").text
     response = register_student_via_api(
         driver, names=names, surnames="", dni="73000041"
@@ -104,6 +129,7 @@ def test_tc004_rechaza_documento_alfanumerico(driver, base_url):
     )
 
     assert "8 dígitos" in registration_error(driver)
+    assert_red_warning(driver, "ci-reg-error")
     assert names not in driver.find_element(By.ID, "registro-list").text
     response = register_student_via_api(
         driver, names=names, surnames="Prueba", dni="ABC123"
@@ -117,6 +143,14 @@ def test_tc005_rechaza_documento_duplicado(driver, base_url, mysql_available):
     existing_dni = "74125896"
     initial_count = registration_count_for_dni(driver, existing_dni)
     assert initial_count > 0, "El DNI de referencia debe existir en la base demostrativa."
+    submit_student_registration(
+        driver,
+        names=f"Duplicado TC005-{uuid.uuid4().hex[:8]}",
+        surnames="Prueba",
+        dni=existing_dni,
+    )
+    assert "dni ya existente" in registration_error(driver).lower()
+    assert_red_warning(driver, "ci-reg-error")
     response = register_student_via_api(
         driver,
         names=f"Duplicado TC005-{uuid.uuid4().hex[:8]}",
@@ -166,13 +200,12 @@ def test_tc008_estudiante_no_consulta_matriculas(driver, base_url):
 
 
 @pytest.mark.local
-def test_tc009_horario_no_disponible(driver, base_url):
+def test_tc009_turno_de_matricula_aparece_en_resumen(driver, base_url):
     wait = login_as(driver, base_url, USERS[3])
     open_registration_module(driver, wait)
-
-    pytest.skip(
-        "Bloqueado: la pantalla actual no ofrece cursos ni horarios con estado disponible/no disponible."
-    )
+    _, _, summary = _prepare_matricula_flow(driver, wait, turno="Tarde")
+    assert "Turno" in summary
+    assert "Tarde" in summary
 
 
 @pytest.mark.mysql
@@ -186,9 +219,10 @@ def test_tc010_rechaza_matricula_sin_datos_academicos(
         By.CSS_SELECTOR, "#page-matricula .topbar button"
     ).click()
 
-    alert = wait.until(EC.alert_is_present())
-    message = alert.text
-    alert.accept()
+    message = wait.until(
+        lambda browser: browser.find_element(By.ID, "ci-mat-error").text.strip()
+    )
+    assert_red_warning(driver, "ci-mat-error")
 
     assert "nivel" in message.lower()
     assert "grado" in message.lower()
@@ -217,23 +251,35 @@ def test_tc011_doble_confirmacion_no_crea_dos_matriculas(
     )
     confirm.click()
 
-    alert = wait.until(EC.alert_is_present())
-    message = alert.text
-    alert.accept()
+    message = wait.until(
+        lambda browser: browser.find_element(By.ID, "ci-mat-error").text.strip()
+    )
+    assert_red_warning(driver, "ci-mat-error")
     final_count = driver.execute_script("return allMatriculas.length;")
 
     assert final_count == initial_count + 1
-    assert "seleccionar" in message.lower()
+    assert "alumno" in message.lower()
 
 
 @pytest.mark.local
 def test_tc012_error_controlado_no_deja_registro_parcial(driver, base_url):
-    wait = login_as(driver, base_url, USERS[3])
-    open_registration_module(driver, wait)
-
-    pytest.skip(
-        "Bloqueado: el entorno no tiene mecanismo de inyección de error controlado al guardar."
+    open_registration_page(driver, base_url)
+    names = f"Fallo TC012-{uuid.uuid4().hex[:8]}"
+    dni = f"{70000000 + uuid.uuid4().int % 9999999:08d}"
+    initial_count = registration_count_for_dni(driver, dni)
+    submit_student_registration(
+        driver,
+        names=names,
+        surnames="Prueba",
+        dni=dni,
+        local_only=True,
+        api_status=500,
     )
+
+    assert "error controlado" in registration_error(driver).lower()
+    assert_red_warning(driver, "ci-reg-error")
+    assert names not in driver.find_element(By.ID, "registro-list").text
+    assert registration_count_for_dni(driver, dni) == initial_count == 0
 
 
 @pytest.mark.mysql
@@ -273,10 +319,28 @@ def test_tc014_filtro_sin_matriculas_muestra_estado_vacio(driver, base_url):
 def test_tc015_consulta_coincide_con_matricula_creada(driver, base_url):
     wait = login_as(driver, base_url, USERS[3])
     open_registration_module(driver, wait)
-
-    pytest.skip(
-        "Bloqueado: el caso requiere curso/NRC y horario; la aplicación solo permite nivel, grado, sección y turno."
+    student_id, student_name, summary = _prepare_matricula_flow(driver, wait)
+    assert student_name in summary
+    initial_count = driver.execute_script(
+        "return allMatriculas.filter(m => String(m.alumnoId).replace(/^alumno-/i, '') === arguments[0]).length;",
+        student_id,
     )
+    driver.find_element(
+        By.CSS_SELECTOR, "#matricula-step-2 button[onclick='submitMatriculaForm()']"
+    ).click()
+    wait.until(
+        lambda browser: browser.execute_script(
+            "return allMatriculas.filter(m => String(m.alumnoId).replace(/^alumno-/i, '') === arguments[0]).length;",
+            student_id,
+        )
+        == initial_count + 1
+    )
+
+    message = _query_student_matriculas(driver, wait, student_id)
+    results = driver.find_element(By.ID, "matricula-consulta-resultados").text
+    assert "se encontraron" in message.lower()
+    assert student_name in results
+    assert "P1°B" in results
 
 
 @pytest.mark.local
@@ -307,12 +371,22 @@ def test_tc017_consulta_api_requiere_sesion(driver, base_url):
 
 
 @pytest.mark.local
-def test_tc018_flujo_completo_con_curso_y_horario(driver, base_url):
+def test_tc018_flujo_completo_de_matricula(driver, base_url):
     wait = login_as(driver, base_url, USERS[3])
     open_registration_module(driver, wait)
+    _, student_name, summary = _prepare_matricula_flow(driver, wait, turno="Mañana")
+    assert student_name in summary
+    assert "Primaria" in summary
+    assert "1" in summary
+    assert "B" in summary
+    assert "Mañana" in summary
 
-    pytest.skip(
-        "Bloqueado: el flujo exige NRC/curso y horario disponible, campos que no existen en la interfaz actual."
+    driver.find_element(
+        By.CSS_SELECTOR, "#matricula-step-2 button[onclick='submitMatriculaForm()']"
+    ).click()
+    wait.until(
+        lambda browser: student_name in browser.find_element(By.ID, "matricula-tbody").text
+        and "P1°B" in browser.find_element(By.ID, "matricula-tbody").text
     )
 
 
@@ -370,9 +444,28 @@ def test_tc021_rechaza_dni_duplicado_en_registro_local(driver, base_url):
         local_only=True,
     )
 
-    assert "ya existe" in registration_error(driver).lower()
+    assert "dni ya existente" in registration_error(driver).lower()
+    assert_red_warning(driver, "ci-reg-error")
     assert "Duplicada TC021" not in driver.find_element(By.ID, "registro-list").text
     assert registration_count_for_dni(driver, dni) == initial_count == 1
+
+
+@pytest.mark.local
+def test_tc023_rechaza_registro_sin_nombres(driver, base_url):
+    open_registration_page(driver, base_url)
+    dni = f"{70000000 + uuid.uuid4().int % 9999999:08d}"
+    initial_count = registration_count_for_dni(driver, dni)
+    submit_student_registration(
+        driver,
+        names="",
+        surnames="Prueba",
+        dni=dni,
+        local_only=True,
+    )
+
+    assert "nombres" in registration_error(driver).lower()
+    assert_red_warning(driver, "ci-reg-error")
+    assert registration_count_for_dni(driver, dni) == initial_count == 0
 
 
 @pytest.mark.local
