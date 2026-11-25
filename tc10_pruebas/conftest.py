@@ -34,7 +34,7 @@ EVIDENCE_FOLDERS = {
 
 @pytest.fixture
 def base_url():
-    return os.environ.get("SELENIUM_BASE_URL", "http://localhost:3000").rstrip("/")
+    return os.environ.get("SELENIUM_BASE_URL", "http://localhost:3001").rstrip("/")
 
 
 @pytest.fixture

@@ -24,7 +24,7 @@ Inicia la aplicacion:
 npm start
 ```
 
-Abre `http://localhost:3000`. En otra terminal, ejecuta las pruebas:
+Abre `http://localhost:3001`. En otra terminal, ejecuta las pruebas:
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -q

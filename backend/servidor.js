@@ -5,7 +5,7 @@ const { randomBytes } = require('crypto');
 const { pool, obtenerDatosDashboard, mysqlUnavailable } = require('./consultas');
 const { registrarAlumno } = require('./servicios/alumnos');
 
-const PORT = Number(process.env.API_PORT || 3000);
+const PORT = Number(process.env.API_PORT || 3001);
 const PROJECT_ROOT = path.resolve(__dirname, '..');
 const VIEWS_DIR = path.join(PROJECT_ROOT, 'frontend', 'views');
 const SCREEN_NAMES = [

@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     env:
-      API_PORT: 3000
+      API_PORT: 3001
       SELENIUM_HEADLESS: "1"
     steps:
       - name: Descargar código
@@ -68,7 +68,7 @@ jobs:
         run: |
           node backend/servidor.js > server.log 2>&1 &
           for attempt in {1..30}; do
-            if curl --fail --silent http://127.0.0.1:3000/api/salud > /dev/null; then
+            if curl --fail --silent http://127.0.0.1:3001/api/salud > /dev/null; then
               echo "Servidor disponible"
               exit 0
             fi
