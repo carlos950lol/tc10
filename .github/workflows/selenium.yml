@@ -1,0 +1,74 @@
+name: Pruebas automatizadas Selenium
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  selenium:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      API_PORT: 3000
+      SELENIUM_HEADLESS: "1"
+    steps:
+      - name: Descargar código
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Configurar Chrome
+        uses: browser-actions/setup-chrome@v1
+        with:
+          chrome-version: stable
+          install-chromedriver: true
+
+      - name: Instalar dependencias
+        run: |
+          npm ci
+          python -m pip install -r requirements.txt
+
+      - name: Levantar servidor local
+        run: |
+          node backend/servidor.js > server.log 2>&1 &
+          for attempt in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:3000/api/salud > /dev/null; then
+              echo "Servidor disponible"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat server.log
+          exit 1
+
+      - name: Ejecutar casos Selenium
+        run: |
+          mkdir -p capturas_evidencia
+          python -m pytest -q --junitxml=capturas_evidencia/reporte_selenium.xml
+
+      - name: Guardar reportes y evidencias
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: evidencias-selenium
+          path: |
+            capturas_evidencia/
+            server.log
+          if-no-files-found: warn

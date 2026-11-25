@@ -1,0 +1,96 @@
+name: Publicar resultados en Kiwi TCMS
+
+on:
+  workflow_run:
+    workflows: [ "Pruebas automatizadas Selenium" ]
+    types: [ completed ]
+    branches: [ "main" ]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  publicar-resultados:
+    if: github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TCMS_PREFIX: "TC10 GitHub Actions"
+      TCMS_PRODUCT: "TC10 Sistema Academico"
+      TCMS_PRODUCT_VERSION: ${{ github.event.workflow_run.head_branch }}
+      TCMS_BUILD: ${{ github.event.workflow_run.run_number }}-${{ github.event.workflow_run.run_attempt }}
+    steps:
+      - name: Descargar reporte JUnit de Selenium
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: evidencias-selenium
+          path: selenium-artifacts
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configurar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validar credenciales y configurar Kiwi TCMS
+        id: configure
+        env:
+          KIWI_TCMS_URL: ${{ vars.KIWI_TCMS_URL }}
+          KIWI_TCMS_USERNAME: ${{ secrets.KIWI_TCMS_USERNAME }}
+          KIWI_TCMS_PASSWORD: ${{ secrets.KIWI_TCMS_PASSWORD }}
+        run: |
+          report="$(find selenium-artifacts -type f -name 'reporte_selenium.xml' -print -quit 2>/dev/null || true)"
+          if [ -z "$report" ]; then
+            echo "::notice::No se encontro el reporte JUnit de Selenium; no hay resultados para importar."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "$KIWI_TCMS_URL" ] || [ -z "$KIWI_TCMS_USERNAME" ] || [ -z "$KIWI_TCMS_PASSWORD" ]; then
+            echo "::notice::Configura la variable KIWI_TCMS_URL y los secrets KIWI_TCMS_USERNAME y KIWI_TCMS_PASSWORD para habilitar la importacion."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          export KIWI_REPORT_PATH="$report"
+          python - <<'PY'
+          import configparser
+          import os
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          url = os.environ["KIWI_TCMS_URL"].strip()
+          parsed = urlsplit(url)
+          if parsed.scheme != "https" or not parsed.hostname or not parsed.path.rstrip("/").endswith("xml-rpc"):
+              raise SystemExit("KIWI_TCMS_URL debe ser HTTPS y apuntar al endpoint /xml-rpc/.")
+
+          config = configparser.ConfigParser(interpolation=None)
+          config["tcms"] = {
+              "url": url,
+              "username": os.environ["KIWI_TCMS_USERNAME"],
+              "password": os.environ["KIWI_TCMS_PASSWORD"],
+          }
+          config_path = Path.home() / ".tcms.conf"
+          with config_path.open("w", encoding="utf-8") as config_file:
+              config.write(config_file)
+          config_path.chmod(0o600)
+
+          report_path = os.environ["KIWI_REPORT_PATH"]
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
+              output.write("ready=true\n")
+              output.write(f"report_path={report_path}\n")
+          PY
+
+      - name: Instalar importador oficial de Kiwi TCMS
+        if: steps.configure.outputs.ready == 'true'
+        run: python -m pip install kiwitcms-junit.xml-plugin==15.0
+
+      - name: Importar resultados a Kiwi TCMS
+        if: steps.configure.outputs.ready == 'true'
+        env:
+          REPORT_PATH: ${{ steps.configure.outputs.report_path }}
+        run: tcms-junit.xml-plugin "$REPORT_PATH"

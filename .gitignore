@@ -6,3 +6,5 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 capturas_evidencia/
+jmeter/results/
+wave-results/
