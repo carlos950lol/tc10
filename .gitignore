@@ -7,4 +7,3 @@ __pycache__/
 .pytest_cache/
 capturas_evidencia/
 jmeter/results/
-wave-results/

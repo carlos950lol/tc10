@@ -57,10 +57,6 @@ jmeter.bat -n -t jmeter\tc10-load-test.jmx -Jhost=127.0.0.1 -Jport=3001 -Jthread
 
 Los valores `threads`, `rampUp` y `loops` tambien se pueden cambiar en la linea de comandos; el plan permite parametrizar host, puerto y credenciales de demostracion mediante propiedades `-J`.
 
-## Auditoria de accesibilidad con WAVE
-
-El workflow `.github/workflows/wave.yml` usa la API oficial de WAVE y se ejecuta solo manualmente desde **Actions**. WAVE analiza la pagina desde sus servidores, asi que necesita una URL HTTPS publica; `localhost` no es accesible para el servicio remoto. Configura `WAVE_API_KEY` como secret y `WAVE_TARGET_URL` como variable del repositorio en **Settings > Secrets and variables > Actions**. En una ejecucion manual puedes indicar otra URL; dejala vacia para usar la variable. La auditoria solicita `reporttype=2` (2 creditos API por pagina) y el JSON se descarga desde el artefacto `wave-accessibility-report`.
-
 ## Reportes de pruebas en Kiwi TCMS
 
 El workflow `.github/workflows/kiwi-tcms.yml` importa a Kiwi TCMS el reporte JUnit que produce el workflow Selenium, sin volver a ejecutar las pruebas. Se ejecuta al terminar Selenium para un push a `main`; los pull requests no se importan porque su artefacto no debe procesarse con credenciales privilegiadas. Configura la variable `KIWI_TCMS_URL` (endpoint HTTPS terminado en `/xml-rpc/`) y los secrets `KIWI_TCMS_USERNAME` y `KIWI_TCMS_PASSWORD` en GitHub. Si faltan credenciales o el reporte, el workflow lo indica y omite la importacion; el reporte Selenium sigue descargable como artefacto.
