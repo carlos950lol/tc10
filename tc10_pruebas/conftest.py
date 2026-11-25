@@ -9,6 +9,7 @@ from urllib.parse import urlsplit
 import pytest
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options as ChromeOptions
+from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.edge.options import Options as EdgeOptions
 from selenium.common.exceptions import NoAlertPresentException, WebDriverException
 
@@ -55,11 +56,16 @@ def browser():
 
     if browser == "chrome":
         options = ChromeOptions()
+        chrome_binary = os.environ.get("SELENIUM_CHROME_BINARY")
+        if chrome_binary:
+            options.binary_location = chrome_binary
         if headless:
             options.add_argument("--headless=new")
         options.add_argument("--window-size=1440,1000")
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
-        instance = webdriver.Chrome(options=options)
+        chrome_driver = os.environ.get("SELENIUM_CHROMEDRIVER")
+        service = ChromeService(executable_path=chrome_driver) if chrome_driver else ChromeService()
+        instance = webdriver.Chrome(service=service, options=options)
     elif browser == "edge":
         options = EdgeOptions()
         if headless:

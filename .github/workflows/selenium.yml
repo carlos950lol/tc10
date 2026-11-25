@@ -35,10 +35,29 @@ jobs:
           cache-dependency-path: requirements.txt
 
       - name: Configurar Chrome
+        id: setup-chrome
         uses: browser-actions/setup-chrome@v2
         with:
           chrome-version: stable
           install-chromedriver: true
+
+      - name: Verificar y seleccionar Chrome y ChromeDriver
+        env:
+          CHROME_PATH: ${{ steps.setup-chrome.outputs.chrome-path }}
+          CHROMEDRIVER_PATH: ${{ steps.setup-chrome.outputs.chromedriver-path }}
+        run: |
+          test -x "$CHROME_PATH" || { echo "::error::No se encontro el binario de Chrome instalado por el workflow."; exit 1; }
+          test -x "$CHROMEDRIVER_PATH" || { echo "::error::No se encontro el ChromeDriver instalado por el workflow."; exit 1; }
+          chrome_major="$("$CHROME_PATH" --version | sed -E 's/.* ([0-9]+)\..*/\1/')"
+          driver_major="$("$CHROMEDRIVER_PATH" --version | sed -E 's/.* ([0-9]+)\..*/\1/')"
+          echo "Chrome major: $chrome_major"
+          echo "ChromeDriver major: $driver_major"
+          if [ "$chrome_major" != "$driver_major" ]; then
+            echo "::error::Chrome y ChromeDriver deben tener la misma version principal."
+            exit 1
+          fi
+          echo "SELENIUM_CHROME_BINARY=$CHROME_PATH" >> "$GITHUB_ENV"
+          echo "SELENIUM_CHROMEDRIVER=$CHROMEDRIVER_PATH" >> "$GITHUB_ENV"
 
       - name: Instalar dependencias
         run: |
