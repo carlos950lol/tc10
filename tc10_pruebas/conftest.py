@@ -61,6 +61,9 @@ def browser():
             options.binary_location = chrome_binary
         if headless:
             options.add_argument("--headless=new")
+            if os.name == "posix":
+                options.add_argument("--no-sandbox")
+                options.add_argument("--disable-dev-shm-usage")
         options.add_argument("--window-size=1440,1000")
         options.set_capability("goog:loggingPrefs", {"browser": "ALL"})
         chrome_driver = os.environ.get("SELENIUM_CHROMEDRIVER")
