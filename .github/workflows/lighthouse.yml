@@ -1,0 +1,47 @@
+name: Auditoria Lighthouse Local
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lighthouse-local:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      API_PORT: 3000
+    steps:
+      - name: Bajar código del repo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Levantar servidor local
+        run: |
+          node backend/servidor.js > server.log 2>&1 &
+          echo $! > server.pid
+          for attempt in {1..30}; do
+            if curl --fail --silent --show-error http://127.0.0.1:3000/ > /dev/null; then
+              echo "Servidor disponible"
+              exit 0
+            fi
+            sleep 1
+          done
+          cat server.log
+          exit 1
+
+      - name: Auditar con Lighthouse
+        uses: treosh/lighthouse-ci-action@v12
+        with:
+          urls: |
+            http://127.0.0.1:3000/
+          uploadArtifacts: true
