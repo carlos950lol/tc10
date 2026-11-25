@@ -1,3 +1,12 @@
+document.addEventListener('keydown',event=>{
+  if(event.key!=='Enter'&&event.key!==' ')return;
+  if(!(event.target instanceof Element))return;
+  const control=event.target.closest('[role="button"],[role="checkbox"],[role="switch"]');
+  if(!control||control.tagName==='BUTTON'||control.getAttribute('aria-disabled')==='true')return;
+  event.preventDefault();
+  control.click();
+});
+
 function fillLogin(email, pass, role){
   document.getElementById('login-email').value = email;
   document.getElementById('login-pass').value = pass;
@@ -47,6 +56,7 @@ async function doLogout(){
   }
   CU=null;allStudents=[];allGrades=[];allTasks=[];allMatriculas=[];allReclamos=[];allRegistros=[];
   ['login-screen','portal-screen'].forEach((id,i)=>{document.getElementById(id).classList.toggle('active',i===0);});
+  document.title='Acceso | Academia Decam';
   document.getElementById('login-email').value='';
   document.getElementById('login-pass').value='';
 }
@@ -63,7 +73,6 @@ async function initPortal(){
   document.getElementById('att-date').value=now.toISOString().split('T')[0];
   applyRoleUI();buildSidebar();buildDashboard();buildSchedule();buildDirectorio();buildProfile();populateSelects();
   showPage('dashboard');
-  if(window.innerWidth<=960)document.getElementById('mobile-bar').style.display='flex';
 }
 
 function applyRoleUI(){
@@ -203,7 +212,7 @@ const SVGS={
 };
 function svgIcon(name){return SVGS[name]||'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';}
 function sc(ic,icon,val,label){return '<div class="stat-card"><div class="stat-icon '+ic+'">'+svgIcon(icon)+'</div><div class="stat-val">'+val+'</div><div class="stat-label">'+label+'</div></div>';}
-function qb(icon,label,page){return '<div class="quick-btn" onclick="showPage(\''+page+'\')"><span class="qi">'+svgIcon(icon)+'</span><span class="ql">'+label+'</span></div>';}
+function qb(icon,label,page){return '<div class="quick-btn" role="button" tabindex="0" onclick="showPage(\''+page+'\')"><span class="qi" aria-hidden="true">'+svgIcon(icon)+'</span><span class="ql">'+label+'</span></div>';}
 
 function loadAttGroup(){
   const g=document.getElementById('att-group-filter').value;
@@ -211,10 +220,10 @@ function loadAttGroup(){
   const tb=document.getElementById('att-tbody');
   if(!g){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h3>Selecciona un grupo</h3></div></td></tr>';return;}
   if(!students.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Sin alumnos en este grupo</h3></div></td></tr>';return;}
-  tb.innerHTML=students.map((s,i)=>'<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><div class="att-rg"><button class="att-r sel-p" onclick="setAtt(this,\'P\')">P</button><button class="att-r" onclick="setAtt(this,\'A\')">A</button><button class="att-r" onclick="setAtt(this,\'L\')">T</button></div></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill bf-ex" style="width:'+(s.att||95)+'%"></div></div><span>'+(s.att||95)+'%</span></div></td><td>0</td><td><span class="badge b-success">Normal</span></td></tr>').join('');
+  tb.innerHTML=students.map((s,i)=>'<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><div class="att-rg"><button class="att-r sel-p" aria-label="Marcar como presente" aria-pressed="true" onclick="setAtt(this,\'P\')">P</button><button class="att-r" aria-label="Marcar como ausente" aria-pressed="false" onclick="setAtt(this,\'A\')">A</button><button class="att-r" aria-label="Marcar como tarde" aria-pressed="false" onclick="setAtt(this,\'L\')">T</button></div></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill bf-ex" style="width:'+(s.att||95)+'%"></div></div><span>'+(s.att||95)+'%</span></div></td><td>0</td><td><span class="badge b-success">Normal</span></td></tr>').join('');
 }
-function markAll(v){document.querySelectorAll('#att-tbody .att-rg').forEach(g=>{g.querySelectorAll('.att-r').forEach(b=>b.classList.remove('sel-p','sel-a','sel-l'));const t=g.querySelector('[onclick*="\''+v+'\'"]');if(t)t.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');});}
-function setAtt(btn,v){const g=btn.parentElement;g.querySelectorAll('.att-r').forEach(b=>b.classList.remove('sel-p','sel-a','sel-l'));btn.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');}
+function markAll(v){document.querySelectorAll('#att-tbody .att-rg').forEach(g=>{const buttons=g.querySelectorAll('.att-r');buttons.forEach(b=>{b.classList.remove('sel-p','sel-a','sel-l');b.setAttribute('aria-pressed','false');});const t=buttons[v==='P'?0:v==='A'?1:2];if(t){t.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');t.setAttribute('aria-pressed','true');}});}
+function setAtt(btn,v){const g=btn.parentElement;g.querySelectorAll('.att-r').forEach(b=>{b.classList.remove('sel-p','sel-a','sel-l');b.setAttribute('aria-pressed','false');});btn.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');btn.setAttribute('aria-pressed','true');}
 
 function buildStudentAttCalendar(){
   const now=new Date();const y=now.getFullYear(),m=now.getMonth();
@@ -224,7 +233,7 @@ function buildStudentAttCalendar(){
   const fd=new Date(y,m,1).getDay(),dim=new Date(y,m+1,0).getDate(),tod=now.getDate();
   let h=days.map(d=>'<div class="att-lbl">'+d+'</div>').join('');
   for(let i=0;i<fd;i++)h+='<div class="att-empty"></div>';
-  for(let d=1;d<=dim;d++){const dow=new Date(y,m,d).getDay();if(dow===0||dow===6)h+='<div class="att-day att-h">'+d+'</div>';else if(d>tod)h+='<div class="att-day att-h" style="opacity:.35">'+d+'</div>';else h+='<div class="att-day att-p">'+d+'</div>';}
+  for(let d=1;d<=dim;d++){const dow=new Date(y,m,d).getDay();if(dow===0||dow===6)h+='<div class="att-day att-h">'+d+'</div>';else if(d>tod)h+='<div class="att-day att-h" >'+d+'</div>';else h+='<div class="att-day att-p">'+d+'</div>';}
   document.getElementById('att-calendar').innerHTML=h;
   document.getElementById('att-student-stats').innerHTML=sc('si-green','ti-circle-check',tod,'Dias registrados')+sc('si-red','ti-circle-x','0','Faltas')+sc('si-amber','ti-clock','0','Llegadas tarde')+sc('si-teal','ti-chart-pie','100%','% Asistencia');
 }
@@ -233,13 +242,13 @@ function renderTasks(){
   const isT=CU.role==='teacher';
   const tasks=taskFilter==='all'?allTasks:allTasks.filter(t=>t.status===taskFilter);
   const el=document.getElementById('tasks-list');
-  if(!tasks.length){const msg=taskFilter==='late'?'Sin tareas atrasadas!':taskFilter==='done'?'Sin tareas entregadas.':'Sin tareas registradas.';el.innerHTML='<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg><h3>'+msg+'</h3></div>';return;}
+  if(!tasks.length){const msg=taskFilter==='late'?'Sin tareas atrasadas!':taskFilter==='done'?'Sin tareas entregadas.':'Sin tareas registradas.';el.innerHTML='<div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg><h2>'+msg+'</h2></div>';return;}
   el.innerHTML=tasks.map(t=>{const done=t.status==='done';
-    return '<div class="task-item"><div class="task-check '+(done?'done ':'')+(isT?'editable':'readonly')+'"'+(isT?' onclick="toggleTask(this)"':' title="Solo el maestro puede modificar tareas"')+'>'+(done?'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div><div style="flex:1"><div class="task-title" style="'+(done?'text-decoration:line-through;opacity:.5':'')+'"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+(t.color||'var(--accent)')+';margin-right:7px;vertical-align:middle"></span>'+t.title+'</div><div class="task-meta">'+(t.subject||'General')+' - '+(t.type||'Tarea')+'</div></div><span class="task-due '+(t.status==='late'?'due-late':done?'due-ok':'due-soon')+'"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+t.dueDate+'</span><span class="badge '+(done?'b-success':t.status==='late'?'b-danger':'b-info')+'" style="margin-left:8px">'+(done?'Entregada':t.status==='late'?'Atrasada':'Pendiente')+'</span></div>';
+    return '<div class="task-item"><div class="task-check '+(done?'done ':'')+(isT?'editable':'readonly')+'" role="checkbox" aria-label="Marcar como completada: '+t.title+'" aria-checked="'+done+'" tabindex="'+(isT?'0':'-1')+'"'+(!isT?' aria-disabled="true"':'')+(isT?' onclick="toggleTask(this)"':' title="Solo el maestro puede modificar tareas"')+'>'+(done?'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>':'')+'</div><div style="flex:1"><div class="task-title" style="'+(done?'text-decoration:line-through':'')+'"><span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:'+(t.color||'var(--accent)')+';margin-right:7px;vertical-align:middle" aria-hidden="true"></span>'+t.title+'</div><div class="task-meta">'+(t.subject||'General')+' - '+(t.type||'Tarea')+'</div></div><span class="task-due '+(t.status==='late'?'due-late':done?'due-ok':'due-soon')+'"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'+t.dueDate+'</span><span class="badge '+(done?'b-success':t.status==='late'?'b-danger':'b-info')+'" style="margin-left:8px">'+(done?'Entregada':t.status==='late'?'Atrasada':'Pendiente')+'</span></div>';
   }).join('');
 }
 function filterTasks(f,btn){taskFilter=f;document.querySelectorAll('#tasks-tabs .tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderTasks();}
-function toggleTask(el){el.classList.toggle('done');el.innerHTML=el.classList.contains('done')?'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':'';}
+function toggleTask(el){el.classList.toggle('done');el.setAttribute('aria-checked',String(el.classList.contains('done')));el.innerHTML=el.classList.contains('done')?'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>':'';}
 
 function filterStudents(q){
   const gf=document.getElementById('students-group-filter').value;
@@ -272,7 +281,7 @@ function buildProfile(){
   const fields=isT?[['Nombre completo',CU.name],['Correo',CU.email],['Materia','Programacion y bases de datos'],['Grupos',new Set(allStudents.map(s=>s.group)).size+' secciones'],['Telefono',CU.phone||'No registrado'],['Ingreso','2026']]:[['Nombre completo',CU.name],['Correo',CU.email],['Matricula','MAT-0001'],['Grupo',CU.group||firstStudent.group||'Sin grupo'],['Tutor','Docente asignado'],['Ciclo','2026-II']];
   document.getElementById('profile-info-section').innerHTML=fields.map(([l,v])=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--muted)">'+l+'</span><span style="font-size:13px;font-weight:600;color:var(--navy)">'+v+'</span></div>').join('');
   const notifs=[['Nuevos avisos',true],['Calificaciones publicadas',true],['Recordatorio de tareas',true],['Mensajes',false]];
-  document.getElementById('notif-settings').innerHTML=notifs.map(([l,on])=>'<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--navy)">'+l+'</span><div class="toggle '+(on?'on':'off')+'" onclick="this.classList.toggle(\'on\');this.classList.toggle(\'off\')"><div class="t-knob"></div></div></div>').join('');
+  document.getElementById('notif-settings').innerHTML=notifs.map(([l,on])=>'<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--navy)">'+l+'</span><button type="button" role="switch" aria-label="'+l+'" aria-checked="'+on+'" class="toggle '+(on?'on':'off')+'" onclick="this.classList.toggle(\'on\');this.classList.toggle(\'off\');this.setAttribute(\'aria-checked\',String(this.classList.contains(\'on\')))"><span class="t-knob" aria-hidden="true"></span></button></div>').join('');
   document.getElementById('edit-name').value=CU.name;
   document.getElementById('edit-email').value=CU.email;
 }
@@ -290,6 +299,7 @@ function showPage(id){
   if(!CU){
     document.getElementById('portal-screen').classList.remove('active');
     document.getElementById('login-screen').classList.add('active');
+    document.title='Acceso | Academia Decam';
     return;
   }
   if(id==='matricula'&&CU.role!=='jefe'&&CU.role!=='registrador'){id='dashboard';}
@@ -299,10 +309,12 @@ function showPage(id){
     if(blocked.includes(id)){id='dashboard';}
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>{n.classList.remove('active');n.removeAttribute('aria-current');});
   const el=document.getElementById('page-'+id);if(el)el.classList.add('active');
+  const heading=el?.querySelector('h1')?.textContent.trim();
+  document.title=heading?`${heading} | Academia Decam`:'Inicio | Academia Decam';
   const ni=document.querySelector('.nav-item[data-page="'+id+'"]');
-  if(ni)ni.classList.add('active');else{const d=document.querySelector('.nav-item[data-page="dashboard"]');if(d)d.classList.add('active');}
+  if(ni){ni.classList.add('active');ni.setAttribute('aria-current','page');}else{const d=document.querySelector('.nav-item[data-page="dashboard"]');if(d){d.classList.add('active');d.setAttribute('aria-current','page');}}
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('main-content').scrollTop=0;
   if(id==='asistencia'&&CU.role==='student')buildStudentAttCalendar();

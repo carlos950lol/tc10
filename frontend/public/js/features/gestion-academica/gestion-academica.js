@@ -406,7 +406,7 @@ function renderMatriculas(){
     <td style="padding:10px 16px;font-size:13px"><span class="badge b-gray">${m.seccion}</span></td>
     <td style="padding:10px 16px;font-size:13px;color:var(--muted)">${m.anio}</td>
     <td style="padding:10px 16px;font-size:13px;color:var(--muted);white-space:nowrap">${m.fecha}</td>
-    <td style="padding:10px 16px"><span class="badge ${estadoBadge(m.estado)}" onclick="toggleMatriculaEstado(${m.id})" style="cursor:pointer" title="Cambiar estado">${m.estado.charAt(0).toUpperCase()+m.estado.slice(1)}</span></td>
+    <td style="padding:10px 16px"><span class="badge ${estadoBadge(m.estado)}" role="button" tabindex="0" onclick="toggleMatriculaEstado(${m.id})" style="cursor:pointer" title="Cambiar estado de la matrícula">${m.estado.charAt(0).toUpperCase()+m.estado.slice(1)}</span></td>
     <td style="padding:10px 16px">
       <button class="btn btn-sm" onclick="showDtMatricula(allMatriculas.find(x=>x.id===${m.id}))" title="Ver detalle">
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -636,7 +636,7 @@ function renderRegistro(){
     return;
   }
   const tipoBadge = t=>({alumno:'b-blue',docente:'b-green',administrativo:'b-amber'}[t]||'b-gray');
-  el.innerHTML=data.map(r=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="showDtRegistro(allRegistros[${allRegistros.indexOf(r)}])">
+  el.innerHTML=data.map(r=>`<div role="button" tabindex="0" aria-label="Ver detalle del registro de ${r.nombre}" style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="showDtRegistro(allRegistros[${allRegistros.indexOf(r)}])">
     <div><div style="font-size:13px;font-weight:500;color:var(--navy)">${r.nombre}</div><div style="font-size:12px;color:var(--muted)">${r.email||r.tel||r.dni||'—'}</div></div>
     <div style="display:flex;align-items:center;gap:8px"><span class="badge ${tipoBadge(r.tipo)}">${r.tipo.charAt(0).toUpperCase()+r.tipo.slice(1)}</span><span style="font-size:11px;color:var(--muted)">${r.fecha}</span></div>
   </div>`).join('');

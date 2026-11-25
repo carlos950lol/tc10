@@ -86,12 +86,21 @@ function serveAsset(res, pathname) {
   const directorioPublico = path.join(PROJECT_ROOT, 'frontend', 'public');
   const archivo = path.normalize(path.join(directorioPublico, relativePath));
   if (!archivo.startsWith(directorioPublico + path.sep)) return json(res, 403, {error: 'Archivo no permitido'});
-  const tipos = {'.css': 'text/css; charset=utf-8', '.js': 'application/javascript; charset=utf-8'};
-  const tipo = tipos[path.extname(archivo).toLowerCase()];
+  const extension = path.extname(archivo).toLowerCase();
+  const tipos = {
+    '.css': 'text/css; charset=utf-8',
+    '.js': 'application/javascript; charset=utf-8',
+    '.jpg': 'image/jpeg',
+    '.png': 'image/png'
+  };
+  const tipo = tipos[extension];
   if (!tipo) return json(res, 404, {error: 'Recurso no encontrado'});
   fs.readFile(archivo, (error, contenido) => {
     if (error) return json(res, 404, {error: 'Recurso no encontrado'});
-    res.writeHead(200, {'Content-Type': tipo, 'Cache-Control': 'no-cache'});
+    const cacheControl = extension === '.jpg' || extension === '.png'
+      ? 'public, max-age=31536000, immutable'
+      : 'no-cache';
+    res.writeHead(200, {'Content-Type': tipo, 'Cache-Control': cacheControl});
     res.end(contenido);
   });
 }
@@ -118,7 +127,7 @@ async function request(req, res) {
     if ((url.pathname === '/' || url.pathname === '/dashboard.html') && req.method === 'GET') {
       return serveDashboard(res);
     }
-    if ((url.pathname.startsWith('/css/') || url.pathname.startsWith('/js/')) && req.method === 'GET') {
+    if ((url.pathname.startsWith('/css/') || url.pathname.startsWith('/js/') || url.pathname.startsWith('/images/')) && req.method === 'GET') {
       return serveAsset(res, url.pathname);
     }
     if (url.pathname === '/api/salud' && req.method === 'GET') {
