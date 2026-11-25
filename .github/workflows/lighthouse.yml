@@ -14,10 +14,10 @@ jobs:
       API_PORT: 3000
     steps:
       - name: Bajar código del repo
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: "20"
           cache: npm

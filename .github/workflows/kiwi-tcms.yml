@@ -24,7 +24,7 @@ jobs:
       - name: Descargar reporte JUnit de Selenium
         id: download
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: evidencias-selenium
           path: selenium-artifacts
@@ -32,7 +32,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configurar Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: "3.11"
 
@@ -59,9 +59,11 @@ jobs:
           export KIWI_REPORT_PATH="$report"
           python - <<'PY'
           import configparser
+          from datetime import datetime, timezone
           import os
           from pathlib import Path
           from urllib.parse import urlsplit
+          import xml.etree.ElementTree as ET
 
           url = os.environ["KIWI_TCMS_URL"].strip()
           parsed = urlsplit(url)
@@ -80,6 +82,16 @@ jobs:
           config_path.chmod(0o600)
 
           report_path = os.environ["KIWI_REPORT_PATH"]
+          report = ET.parse(report_path)
+          for element in report.iter():
+              timestamp = element.get("timestamp")
+              if timestamp:
+                  parsed_timestamp = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                  if parsed_timestamp.tzinfo is not None:
+                      parsed_timestamp = parsed_timestamp.astimezone(timezone.utc).replace(tzinfo=None)
+                  element.set("timestamp", parsed_timestamp.isoformat(timespec="microseconds"))
+          report.write(report_path, encoding="utf-8", xml_declaration=True)
+
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
               output.write("ready=true\n")
               output.write(f"report_path={report_path}\n")
