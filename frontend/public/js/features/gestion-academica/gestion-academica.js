@@ -158,19 +158,8 @@ function renderMatriculaAlumnoOptions(filtro = ''){
       sugerencias.style.display = 'block';
       sugerencias.innerHTML = filtrados.slice(0, 8).map(alumno => {
         const label = alumno.dni ? `${alumno.dni} - ${alumno.nombre}` : alumno.nombre;
-        return `<button type="button" data-alumno-id="${String(alumno.id)}" onclick="seleccionarAlumnoMatricula('${String(alumno.id)}')" style="display:block;width:100%;text-align:left;padding:9px 10px;border:0;background:transparent;color:#0f172a;cursor:pointer;border-radius:8px;font-size:13px;line-height:1.3;transition:all .15s ease;">${label}</button>`;
+        return `<button type="button" class="matricula-alumno-suggestion" data-alumno-id="${String(alumno.id)}" onclick="seleccionarAlumnoMatricula('${String(alumno.id)}')" style="display:block;width:100%;text-align:left;padding:9px 10px;border:0;cursor:pointer;border-radius:8px;font-size:13px;line-height:1.3;transition:all .15s ease;">${label}</button>`;
       }).join('');
-      const buttons = sugerencias.querySelectorAll('button');
-      buttons.forEach(button => {
-        button.addEventListener('mouseenter', () => {
-          button.style.background = 'rgba(79, 70, 229, 0.08)';
-          button.style.color = '#312e81';
-        });
-        button.addEventListener('mouseleave', () => {
-          button.style.background = 'transparent';
-          button.style.color = '#0f172a';
-        });
-      });
     }
   }
 
@@ -686,7 +675,7 @@ function renderReclamos(){
       <div style="font-size:13px;font-weight:600;color:var(--navy)">${r.asunto}</div>
       <div style="display:flex;gap:6px;flex-shrink:0">
         <span class="badge ${est(r.estado)}">${r.estado.charAt(0).toUpperCase()+r.estado.slice(1)}</span>
-        <button class="btn btn-sm" onclick="advanceReclamo(${r.id})">→</button>
+        <button class="btn btn-sm" onclick="advanceReclamo(${r.id})" aria-label="Avanzar al siguiente estado del reclamo">→</button>
       </div>
     </div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:6px">${r.desc.substring(0,120)}${r.desc.length>120?'...':''}</div>

@@ -64,6 +64,7 @@ async function doLogout(){
 async function initPortal(){
   await loadDataStore();
   checkApiConnection();
+  loadTablerIcons();
   document.getElementById('login-screen').classList.remove('active');
   document.getElementById('portal-screen').classList.add('active');
   document.getElementById('school-name-login').textContent=CFG.name;
@@ -73,6 +74,15 @@ async function initPortal(){
   document.getElementById('att-date').value=now.toISOString().split('T')[0];
   applyRoleUI();buildSidebar();buildDashboard();buildSchedule();buildDirectorio();buildProfile();populateSelects();
   showPage('dashboard');
+}
+
+function loadTablerIcons(){
+  if(document.getElementById('tabler-icons-stylesheet'))return;
+  const stylesheet=document.createElement('link');
+  stylesheet.id='tabler-icons-stylesheet';
+  stylesheet.rel='stylesheet';
+  stylesheet.href='https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons-outline.min.css';
+  document.head.append(stylesheet);
 }
 
 function applyRoleUI(){
