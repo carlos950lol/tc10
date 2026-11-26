@@ -1,4 +1,5 @@
-let CU=null,currentRole='teacher',allStudents=[],allGrades=[],allTasks=[],taskFilter='all',allMatriculas=[],allReclamos=[],allRegistros=[],dashboardStats={};
+let CU=null,currentRole='teacher',allStudents=[],allGrades=[],allTasks=[],taskFilter='all',allMatriculas=[],allReclamos=[],allRegistros=[],dashboardStats={},academicAssignments=[];
+let currentAssignmentId='';
 
 const DATA_KEY='academia_decam_data_v2';
 const DATA_COLLECTIONS={
@@ -26,16 +27,10 @@ async function loadDataStore(){
       id:t.idTarea,title:t.titulo,subject:t.materia||'General',type:t.tipo||'Tarea',
       dueDate:t.fechaEntrega,status:t.estado==='atrasada'?'late':t.estado==='entregada'?'done':'pending',color:t.color
     }));
-    allMatriculas=(data.matriculas||[]).map(m=>({id:m.idMatricula,alumnoId:m.idAlumno,nro:'MAT-'+String(m.idMatricula).padStart(4,'0'),nombre:m.nombreAlumno,grupo:m.grupo||'Sin grupo',seccion:m.nombreSeccion||'Sin sección',anio:m.periodoAcademico,fecha:m.fecha,estado:m.estado}));
+    allMatriculas=(data.matriculas||[]).map(m=>({id:m.idMatricula,alumnoId:m.idAlumno,nro:'MAT-'+String(m.idMatricula).padStart(4,'0'),nombre:m.nombreAlumno,grupo:m.grupo||'Sin grupo',seccion:m.nombreSeccion||m.grupo||'Sin grupo',curso:m.nombreCurso,nrcCurso:m.nrcCurso,anio:m.periodoAcademico,fecha:m.fecha,estado:m.estado}));
     allReclamos=(data.reclamos||[]).map(r=>({id:r.idReclamo,asunto:r.motivo,tipo:'academico',prioridad:r.prioridad||'normal',desc:r.descripcion||'',autor:r.nombreAlumno,fecha:r.fecha,estado:r.estado==='en_revision'?'revision':r.estado}));
     const registrosRemotos=[...(data.alumnos||[]).map(a=>({id:'alumno-'+a.idAlumno,nombre:`${a.nombre} ${a.apellido}`.trim(),nombres:a.nombre||'',apellido:a.apellido||'',tipo:'alumno',dni:a.dni,email:a.correo||'',tel:a.telefono||'',fechanac:a.fechaNacimientoFormulario||a.fechaNacimiento||'',sexo:({masculino:'M',femenino:'F'}[String(a.sexo||'').trim().toLowerCase()]||a.sexo||''),procedencia:a.procedencia||'',direccion:a.direccion||'',apoderado:a.apoderadoNombre||'',apoDni:a.apoderadoDni||'',apoTel:a.apoderadoTelefono||'',apoEmail:a.apoderadoCorreo||'',obs:a.apoderadoObservaciones||'',fecha:'Base de datos'})),...(data.docentes||[]).map(d=>({id:'docente-'+d.idDocente,nombre:`${d.nombre} ${d.apellido}`.trim(),tipo:'docente',email:d.correo||'',tel:d.telefono||'',fecha:'Base de datos'}))];
-    const idsRemotos=new Set(registrosRemotos.map(registro=>String(registro.id)));
-    const dniRemotos=new Set(registrosRemotos.filter(registro=>registro.tipo==='alumno').map(registro=>String(registro.dni||'').trim()));
-    const registrosLocales=allRegistros.filter(registro=>
-      !idsRemotos.has(String(registro.id))&&
-      !(registro.tipo==='alumno'&&dniRemotos.has(String(registro.dni||'').trim()))
-    );
-    allRegistros=[...registrosRemotos,...registrosLocales];
+    allRegistros=registrosRemotos;
     dashboardStats=data.stats||{};
     localStorage.setItem(DATA_KEY,JSON.stringify({allStudents,allGrades,allTasks,allMatriculas,allReclamos,allRegistros}));
   }catch(error){console.warn('No se pudo cargar MySQL; se usa la copia local.',error);}
@@ -67,19 +62,60 @@ async function guardarAlumnoEnServidor(registro){
         telefono:registro.tel,
         fechaNacimiento:registro.fechanac,
         sexo:registro.sexo,
-        direccion:registro.direccion
+        direccion:registro.direccion,
+        apoderadoNombre:registro.apoderado,
+        apoderadoDni:registro.apoDni,
+        apoderadoTelefono:registro.apoTel,
+        apoderadoCorreo:registro.apoEmail,
+        apoderadoObservaciones:registro.obs
       })
     });
   }catch(error){
-    if(error instanceof TypeError)return {almacenamiento:'local'};
-    throw error;
+    throw new Error('No se pudo conectar con el servidor. El alumno no fue guardado.');
   }
-  if(response.status===503)return {almacenamiento:'local'};
   const result=await response.json();
   if(response.status===409&&/dni/i.test(result.error||''))throw new Error('DNI ya existente.');
   if(response.status===409||response.status===400)throw new Error(result.error||'No se pudo validar el registro.');
   if(!response.ok)throw new Error(result.error||`No se pudo guardar el alumno (HTTP ${response.status}).`);
   return {almacenamiento:'mysql',id:result.id};
+}
+async function guardarPersonalEnServidor(registro){
+  let response;
+  try{
+    response=await fetch(CFG.apiUrl+'/api/personal',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        nombre:registro.nombres,
+        apellido:registro.apellido,
+        correo:registro.email,
+        telefono:registro.tel,
+        rol:registro.tipo==='docente'?'teacher':registro.tipo,
+        asignaciones:registro.asignaciones || []
+      })
+    });
+  }catch(error){
+    throw new Error('No se pudo conectar con el servidor. El personal no fue registrado.');
+  }
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||`No se pudo registrar el personal (HTTP ${response.status}).`);
+  return result;
+}
+async function loadAcademicAssignments(){
+  if(!CU||!['teacher','jefe'].includes(CU.role))return;
+  const response=await fetch(CFG.apiUrl+'/api/asignacion-docente');
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||'No se pudieron cargar las asignaciones académicas.');
+  academicAssignments=Array.isArray(result)?result:[];
+  const options=academicAssignments.map(assignment=>
+    `<option value="${assignment.idAsignacion}">${assignment.nombreCurso} - ${assignment.grupo} (${assignment.periodoAcademico})</option>`
+  ).join('');
+  ['att-group-filter','grades-assignment-filter'].forEach(id=>{
+    const select=document.getElementById(id);
+    if(!select)return;
+    select.innerHTML='<option value="">Seleccionar curso y grado</option>'+options;
+    select.value='';
+  });
 }
 function updateDataStatus(){
   const status=document.getElementById('data-status');

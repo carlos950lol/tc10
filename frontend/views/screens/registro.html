@@ -70,7 +70,7 @@
               <select class="form-input" id="ci-reg-tipo" onchange="toggleRegistroAlumnoFields();mostrarErrorRegistro('')">
                 <option value="alumno">Alumno</option>
                 <option value="docente">Docente</option>
-                <option value="administrativo">Administrativo</option>
+                <option value="registrador">Registrador</option>
               </select>
             </div>
 
@@ -88,11 +88,11 @@
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
               <div class="form-group" style="margin:0">
                 <label class="form-label" for="ci-reg-dni">DNI</label>
-                <input type="text" class="form-input" id="ci-reg-dni" placeholder="00000000" maxlength="8" oninput="mostrarErrorRegistro('')">
+                  <input type="text" inputmode="numeric" pattern="[0-9]{8}" class="form-input" id="ci-reg-dni" placeholder="00000000" maxlength="8" oninput="this.value=this.value.replace(/\D/g,'');mostrarErrorRegistro('')">
               </div>
               <div class="form-group" style="margin:0" id="ci-reg-fechanac-wrap">
                 <label class="form-label" for="ci-reg-fechanac">Fecha de nacimiento</label>
-                <input type="date" class="form-input" id="ci-reg-fechanac">
+                <input type="date" class="form-input" id="ci-reg-fechanac" required>
               </div>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px" id="ci-reg-sexo-wrap">
@@ -126,7 +126,6 @@
                   <option value="">Seleccionar...</option>
                   <option value="A">A</option>
                   <option value="B">B</option>
-                  <option value="C">C</option>
                 </select>
               </div>
             </div>
@@ -142,18 +141,40 @@
             </div>
             <div class="form-group" style="margin:0">
               <label class="form-label" for="ci-reg-tel">Teléfono</label>
-              <input type="text" class="form-input" id="ci-reg-tel" placeholder="+51 999 999 999">
+              <input type="text" inputmode="numeric" pattern="[0-9]{9}" maxlength="9" class="form-input" id="ci-reg-tel" placeholder="999999999" oninput="this.value=this.value.replace(/\D/g,'')">
+            </div>
+
+            <div id="ci-reg-docente-wrap" style="display:none;flex-direction:column;gap:10px">
+              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Asignaciones del docente</div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" for="ci-reg-cursos">Cursos registrados (puedes elegir varios)</label>
+                <select id="ci-reg-cursos" class="form-input" multiple size="4"></select>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                <div class="form-group" style="margin:0">
+                  <label class="form-label" for="ci-reg-grupo">Grado</label>
+                  <select id="ci-reg-grupo" class="form-input"></select>
+                </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label" for="ci-reg-periodo">Periodo académico</label>
+                  <select id="ci-reg-periodo" class="form-input"></select>
+                </div>
+              </div>
             </div>
 
             <div id="ci-reg-apoderado-wrap" style="display:flex;flex-direction:column;gap:10px">
               <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Datos del apoderado (alumno)</div>
               <div class="form-group" style="margin:0">
-                <label class="form-label" for="ci-reg-apoderado">Nombre del apoderado</label>
-                <input type="text" class="form-input" id="ci-reg-apoderado" placeholder="Nombre completo del apoderado">
+                <label class="form-label" for="ci-reg-apoderado">Nombres y apellidos del apoderado *</label>
+                <input type="text" class="form-input" id="ci-reg-apoderado" placeholder="Nombre completo del apoderado" required>
               </div>
               <div class="form-group" style="margin:0">
-                <label class="form-label" for="ci-reg-apo-tel">Teléfono del apoderado</label>
-                <input type="text" class="form-input" id="ci-reg-apo-tel" placeholder="+51 999 999 999">
+                <label class="form-label" for="ci-reg-apo-dni">DNI del apoderado</label>
+                <input type="text" inputmode="numeric" pattern="[0-9]{8}" maxlength="8" class="form-input" id="ci-reg-apo-dni" placeholder="00000000" oninput="this.value=this.value.replace(/\D/g,'')">
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" for="ci-reg-apo-tel">Teléfono del apoderado *</label>
+                <input type="text" inputmode="numeric" pattern="[0-9]{9}" maxlength="9" class="form-input" id="ci-reg-apo-tel" placeholder="999999999" required oninput="this.value=this.value.replace(/\D/g,'')">
               </div>
             </div>
 
@@ -223,6 +244,35 @@
         </div>
       </div>
 
+    </div>
+  </div>
+  <div class="card jefe-only" style="margin-top:16px">
+    <div class="card-header"><h2>Gestión académica</h2><span class="page-sub">Cursos, años y asignaciones por grado</span></div>
+    <div class="card-pad" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px">
+      <section>
+        <h3>Cursos</h3>
+        <div class="form-group"><label class="form-label" for="course-code">Código NRC</label><input id="course-code" class="form-input" inputmode="numeric" pattern="[0-9]+" required></div>
+        <div class="form-group"><label class="form-label" for="course-name">Nombre del curso</label><input id="course-name" class="form-input" maxlength="150" required></div>
+        <div class="form-group"><label class="form-label" for="course-description">Descripción</label><input id="course-description" class="form-input" maxlength="255"></div>
+        <button class="btn btn-primary" type="button" onclick="createAcademicCourse()">Registrar curso</button>
+        <div id="course-list" style="margin-top:10px"></div>
+      </section>
+      <section>
+        <h3>Año académico</h3>
+        <div class="form-group"><label class="form-label" for="academic-period">Periodo (AAAA-I / AAAA-II)</label><input id="academic-period" class="form-input" placeholder="2026-II" pattern="[0-9]{4}-(I|II)"></div>
+        <button class="btn btn-primary" type="button" onclick="createAcademicYear()">Crear periodo</button>
+        <div id="academic-year-list" style="margin-top:10px"></div>
+      </section>
+      <section>
+        <h3>Asignar docente</h3>
+        <div class="form-group"><label class="form-label" for="assignment-teacher">Docente</label><select id="assignment-teacher" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="assignment-course">Curso</label><select id="assignment-course" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="assignment-group">Grado</label><select id="assignment-group" class="form-input"></select></div>
+        <div class="form-group"><label class="form-label" for="assignment-period">Periodo</label><select id="assignment-period" class="form-input"></select></div>
+        <button class="btn btn-primary" type="button" onclick="createAcademicAssignment()">Guardar asignación</button>
+        <div id="assignment-list" style="margin-top:10px"></div>
+        <p id="academic-management-feedback" role="status" hidden></p>
+      </section>
     </div>
   </div>
 </div>

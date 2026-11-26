@@ -9,25 +9,33 @@ CREATE DATABASE IF NOT EXISTS sistema_academico
 
 USE sistema_academico;
 
+-- SOLO PARA PRUEBAS: elimina todas las tablas y los datos de esta base.
+-- Cada ejecucion reconstruye el esquema y carga los datos demo.
 SET FOREIGN_KEY_CHECKS = 0;
-DROP TABLE IF EXISTS usuario;
-DROP TABLE IF EXISTS tarea;
-DROP TABLE IF EXISTS respuesta_reclamo;
-DROP TABLE IF EXISTS constancia;
-DROP TABLE IF EXISTS pago;
-DROP TABLE IF EXISTS reclamo;
-DROP TABLE IF EXISTS apoderado;
-DROP TABLE IF EXISTS asistencia;
-DROP TABLE IF EXISTS calificacion;
-DROP TABLE IF EXISTS matricula;
-DROP TABLE IF EXISTS seccion;
-DROP TABLE IF EXISTS curso;
-DROP TABLE IF EXISTS docente;
-DROP TABLE IF EXISTS alumno;
+DROP TABLE IF EXISTS
+    promedio,
+    asignacion_docente,
+    respuesta_reclamo,
+    apoderado,
+    calificacion,
+    asistencia,
+    matricula,
+    pago,
+    constancia,
+    tarea,
+    reclamo,
+    usuario,
+    seccion,
+    docente,
+    curso,
+    anio_academico,
+    alumno;
 SET FOREIGN_KEY_CHECKS = 1;
 
+SET @cargar_datos_demo := 1;
+
 -- Alumnos del instituto.
-CREATE TABLE alumno (
+CREATE TABLE IF NOT EXISTS alumno (
     idAlumno INT NOT NULL AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
@@ -46,7 +54,7 @@ CREATE TABLE alumno (
 ) ENGINE=InnoDB;
 
 -- Datos de contacto ficticios de un apoderado por alumno.
-CREATE TABLE apoderado (
+CREATE TABLE IF NOT EXISTS apoderado (
     idApoderado INT NOT NULL AUTO_INCREMENT,
     idAlumno INT NOT NULL,
     nombre VARCHAR(150) NOT NULL,
@@ -63,7 +71,7 @@ CREATE TABLE apoderado (
 ) ENGINE=InnoDB;
 
 -- Docentes responsables de las secciones.
-CREATE TABLE docente (
+CREATE TABLE IF NOT EXISTS docente (
     idDocente INT NOT NULL AUTO_INCREMENT,
     nombre VARCHAR(100) NOT NULL,
     apellido VARCHAR(100) NOT NULL,
@@ -76,7 +84,7 @@ CREATE TABLE docente (
 ) ENGINE=InnoDB;
 
 -- Cursos academicos disponibles.
-CREATE TABLE curso (
+CREATE TABLE IF NOT EXISTS curso (
     nrcCurso INT NOT NULL,
     nombreCurso VARCHAR(150) NOT NULL,
     descripcion VARCHAR(255) NULL,
@@ -87,7 +95,7 @@ CREATE TABLE curso (
 ) ENGINE=InnoDB;
 
 -- Secciones de cada curso y docente responsable.
-CREATE TABLE seccion (
+CREATE TABLE IF NOT EXISTS seccion (
     idSeccion INT NOT NULL AUTO_INCREMENT,
     nrcCurso INT NOT NULL,
     idDocente INT NOT NULL,
@@ -109,7 +117,7 @@ CREATE TABLE seccion (
 ) ENGINE=InnoDB;
 
 -- Matricula: entidad asociativa entre alumno, curso y seccion.
-CREATE TABLE matricula (
+CREATE TABLE IF NOT EXISTS matricula (
     idMatricula INT NOT NULL AUTO_INCREMENT,
     idAlumno INT NOT NULL,
     nrcCurso INT NOT NULL,
@@ -135,7 +143,7 @@ CREATE TABLE matricula (
 ) ENGINE=InnoDB;
 
 -- Calificaciones por alumno y curso.
-CREATE TABLE calificacion (
+CREATE TABLE IF NOT EXISTS calificacion (
     idCalificacion INT NOT NULL AUTO_INCREMENT,
     idAlumno INT NOT NULL,
     nrcCurso INT NOT NULL,
@@ -159,7 +167,7 @@ CREATE TABLE calificacion (
 ) ENGINE=InnoDB;
 
 -- Asistencias por alumno y curso.
-CREATE TABLE asistencia (
+CREATE TABLE IF NOT EXISTS asistencia (
     idAsistencia INT NOT NULL AUTO_INCREMENT,
     idAlumno INT NOT NULL,
     nrcCurso INT NOT NULL,
@@ -180,7 +188,7 @@ CREATE TABLE asistencia (
 ) ENGINE=InnoDB;
 
 -- Reclamos registrados por alumnos.
-CREATE TABLE reclamo (
+CREATE TABLE IF NOT EXISTS reclamo (
     idReclamo INT NOT NULL AUTO_INCREMENT,
     idAlumno INT NOT NULL,
     fecha DATE NOT NULL,
@@ -197,7 +205,7 @@ CREATE TABLE reclamo (
 ) ENGINE=InnoDB;
 
 -- Respuestas emitidas para atender reclamos.
-CREATE TABLE respuesta_reclamo (
+CREATE TABLE IF NOT EXISTS respuesta_reclamo (
     idRespuesta INT NOT NULL AUTO_INCREMENT,
     idReclamo INT NOT NULL,
     fecha DATE NOT NULL,
@@ -213,7 +221,7 @@ CREATE TABLE respuesta_reclamo (
 ) ENGINE=InnoDB;
 
 -- Pagos realizados por alumnos.
-CREATE TABLE pago (
+CREATE TABLE IF NOT EXISTS pago (
     idPago INT NOT NULL AUTO_INCREMENT,
     idAlumno INT NOT NULL,
     fechaPago DATE NULL,
@@ -232,7 +240,7 @@ CREATE TABLE pago (
 ) ENGINE=InnoDB;
 
 -- Constancias academicas solicitadas por alumnos.
-CREATE TABLE constancia (
+CREATE TABLE IF NOT EXISTS constancia (
     idConstancia INT NOT NULL AUTO_INCREMENT,
     idAlumno INT NOT NULL,
     tipo VARCHAR(100) NOT NULL,
@@ -251,7 +259,7 @@ CREATE TABLE constancia (
 ) ENGINE=InnoDB;
 
 -- Cuentas de acceso de los usuarios de prueba y usuarios institucionales.
-CREATE TABLE usuario (
+CREATE TABLE IF NOT EXISTS usuario (
     idUsuario INT NOT NULL AUTO_INCREMENT,
     correo VARCHAR(150) NOT NULL,
     contrasena VARCHAR(255) NOT NULL,
@@ -269,7 +277,7 @@ CREATE TABLE usuario (
 ) ENGINE=InnoDB;
 
 -- Actividades que se muestran en Tareas y en el resumen de cada rol.
-CREATE TABLE tarea (
+CREATE TABLE IF NOT EXISTS tarea (
     idTarea INT NOT NULL AUTO_INCREMENT,
     titulo VARCHAR(180) NOT NULL,
     nrcCurso INT NULL,
@@ -291,7 +299,13 @@ CREATE TABLE tarea (
 -- Periodo de referencia: 2026-II
 -- =============================================================
 
-INSERT INTO alumno (idAlumno, nombre, apellido, grupo, dni, correo, telefono, fechaNacimiento, sexo, procedencia, direccion, estado) VALUES
+DROP PROCEDURE IF EXISTS tc10_insertar_datos_demo;
+DELIMITER $$
+CREATE PROCEDURE tc10_insertar_datos_demo()
+BEGIN
+IF @cargar_datos_demo = 1 THEN
+
+INSERT IGNORE INTO alumno (idAlumno, nombre, apellido, grupo, dni, correo, telefono, fechaNacimiento, sexo, procedencia, direccion, estado) VALUES
 (1, 'Valeria', 'Castillo Rojas', 'A1', '74125896', 'valeria.castillo@academiadecam.edu.pe', '987654321', '2004-03-18', 'Femenino', 'Comas, Lima', 'Av. Los Alisos 184, Comas, Lima', 'activo'),
 (2, 'Diego', 'Mendoza Salazar', 'B1', '72841653', 'diego.mendoza@academiadecam.edu.pe', '986321450', '2003-11-07', 'Masculino', 'San Juan de Lurigancho, Lima', 'Jr. Las Palmeras 527, San Juan de Lurigancho, Lima', 'activo'),
 (3, 'Camila', 'Torres Huaman', 'A2', '75630981', 'camila.torres@academiadecam.edu.pe', '985147236', '2005-01-25', 'Femenino', 'Villa El Salvador, Lima', 'Mz. D Lt. 16, sector 3, Villa El Salvador, Lima', 'activo'),
@@ -305,7 +319,7 @@ INSERT INTO alumno (idAlumno, nombre, apellido, grupo, dni, correo, telefono, fe
 (11, 'Sofia', 'Mamani Rios', 'A6', '76984512', 'sofia.mamani@academiadecam.edu.pe', '977531426', '2005-07-19', 'Femenino', 'Rímac, Lima', 'Calle Amancaes 219, Rímac, Lima', 'activo'),
 (12, 'Bruno', 'Herrera Luna', 'B6', '78310456', 'bruno.herrera@academiadecam.edu.pe', '976420531', '2004-01-09', 'Masculino', 'La Victoria, Lima', 'Av. México 638, La Victoria, Lima', 'activo');
 
-INSERT INTO apoderado (idAlumno, nombre, dni, telefono, correo, observaciones) VALUES
+INSERT IGNORE INTO apoderado (idAlumno, nombre, dni, telefono, correo, observaciones) VALUES
 (1, 'Rosa Elena Castillo', '90000001', '900100001', 'apoderado01@example.invalid', NULL),
 (2, 'Carlos Alberto Mendoza', '90000002', '900100002', 'apoderado02@example.invalid', 'Contacto de emergencia ficticio.'),
 (3, 'María Teresa Torres', '90000003', '900100003', 'apoderado03@example.invalid', NULL),
@@ -319,7 +333,7 @@ INSERT INTO apoderado (idAlumno, nombre, dni, telefono, correo, observaciones) V
 (11, 'Julia Ríos Mamani', '90000011', '900100011', 'apoderado11@example.invalid', NULL),
 (12, 'Andrés Herrera Luna', '90000012', '900100012', 'apoderado12@example.invalid', NULL);
 
-INSERT INTO docente (idDocente, nombre, apellido, especialidad, correo, telefono, estado) VALUES
+INSERT IGNORE INTO docente (idDocente, nombre, apellido, especialidad, correo, telefono, estado) VALUES
 (1, 'Mariana', 'Soto Delgado', 'Programacion y bases de datos', 'mariana.soto@academiadecam.edu.pe', '976123450', 'activo'),
 (2, 'Jorge', 'Ramirez Ponce', 'Matematicas aplicadas', 'jorge.ramirez@academiadecam.edu.pe', '975234601', 'activo'),
 (3, 'Patricia', 'Nunez Cabrera', 'Gestion de proyectos', 'patricia.nunez@academiadecam.edu.pe', '974345612', 'activo'),
@@ -327,7 +341,7 @@ INSERT INTO docente (idDocente, nombre, apellido, especialidad, correo, telefono
 (5, 'Elena', 'Campos Ruiz', 'Analisis de datos', 'elena.campos@academiadecam.edu.pe', '972345614', 'activo'),
 (6, 'Oscar', 'Paredes Silva', 'Ingenieria de software', 'oscar.paredes@academiadecam.edu.pe', '971234605', 'activo');
 
-INSERT INTO curso (nrcCurso, nombreCurso, descripcion, creditos, horasSemanal, estado) VALUES
+INSERT IGNORE INTO curso (nrcCurso, nombreCurso, descripcion, creditos, horasSemanal, estado) VALUES
 (1101, 'Fundamentos de Programacion', 'Algoritmos, estructuras de control y buenas practicas.', 4, 6, 'activo'),
 (1102, 'Bases de Datos', 'Modelado relacional, SQL y consultas sobre datos academicos.', 4, 6, 'activo'),
 (1103, 'Matematica Aplicada', 'Herramientas matematicas para resolver problemas tecnicos.', 3, 4, 'activo'),
@@ -337,7 +351,7 @@ INSERT INTO curso (nrcCurso, nombreCurso, descripcion, creditos, horasSemanal, e
 (1107, 'Ingenieria de Software', 'Requisitos, arquitectura y pruebas de aplicaciones.', 4, 6, 'activo'),
 (1108, 'Seguridad Informatica', 'Principios de seguridad, riesgos y controles basicos.', 3, 4, 'activo');
 
-INSERT INTO seccion (idSeccion, nrcCurso, idDocente, nombreSeccion, horario, aula, capacidad, turno, estado) VALUES
+INSERT IGNORE INTO seccion (idSeccion, nrcCurso, idDocente, nombreSeccion, horario, aula, capacidad, turno, estado) VALUES
 (1, 1101, 1, 'A', 'Lun y Mie 08:00-11:00', 'Lab 201', 30, 'manana', 'activa'),
 (2, 1102, 1, 'A', 'Mar y Jue 08:00-11:00', 'Lab 202', 28, 'manana', 'activa'),
 (3, 1103, 2, 'A', 'Lun y Mie 11:00-13:00', 'Aula 105', 35, 'manana', 'activa'),
@@ -347,7 +361,7 @@ INSERT INTO seccion (idSeccion, nrcCurso, idDocente, nombreSeccion, horario, aul
 (7, 1107, 5, 'A', 'Lun y Mie 16:00-19:00', 'Lab 203', 28, 'tarde', 'activa'),
 (8, 1108, 6, 'A', 'Mar y Jue 16:00-18:00', 'Aula 302', 30, 'tarde', 'activa');
 
-INSERT INTO matricula (idMatricula, idAlumno, nrcCurso, idSeccion, fecha, periodoAcademico, estado, modalidad, fechaRegistro) VALUES
+INSERT IGNORE INTO matricula (idMatricula, idAlumno, nrcCurso, idSeccion, fecha, periodoAcademico, estado, modalidad, fechaRegistro) VALUES
 (1, 1, 1101, 1, '2026-08-10', '2026-II', 'activa', 'presencial', '2026-08-08 09:15:00'),
 (2, 1, 1102, 2, '2026-08-10', '2026-II', 'activa', 'presencial', '2026-08-08 09:18:00'),
 (3, 1, 1103, 3, '2026-08-10', '2026-II', 'activa', 'presencial', '2026-08-08 09:21:00'),
@@ -367,7 +381,7 @@ INSERT INTO matricula (idMatricula, idAlumno, nrcCurso, idSeccion, fecha, period
 (17, 11, 1108, 8, '2026-08-15', '2026-II', 'activa', 'presencial', '2026-08-15 10:28:00'),
 (18, 12, 1106, 6, '2026-08-16', '2026-II', 'activa', 'presencial', '2026-08-16 11:10:00');
 
-INSERT INTO calificacion (idCalificacion, idAlumno, nrcCurso, tipoEvaluacion, nota, fecha, porcentaje, observacion, estado) VALUES
+INSERT IGNORE INTO calificacion (idCalificacion, idAlumno, nrcCurso, tipoEvaluacion, nota, fecha, porcentaje, observacion, estado) VALUES
 (1, 1, 1101, 'Practica 1', 18.00, '2026-08-28', 20.00, 'Buen manejo de algoritmos.', 'registrada'),
 (2, 1, 1101, 'Parcial', 16.50, '2026-09-12', 30.00, 'Debe reforzar modularidad.', 'registrada'),
 (3, 1, 1102, 'Practica 1', 17.00, '2026-09-02', 20.00, 'Consultas correctamente planteadas.', 'registrada'),
@@ -387,7 +401,7 @@ INSERT INTO calificacion (idCalificacion, idAlumno, nrcCurso, tipoEvaluacion, no
 (17, 12, 1106, 'Visualizacion', 15.50, '2026-09-10', 20.00, NULL, 'registrada'),
 (18, 12, 1106, 'Limpieza de datos', 16.00, '2026-09-15', 25.00, NULL, 'registrada');
 
-INSERT INTO asistencia (idAsistencia, idAlumno, nrcCurso, fecha, hora, estado, observacion, tipoSesion) VALUES
+INSERT IGNORE INTO asistencia (idAsistencia, idAlumno, nrcCurso, fecha, hora, estado, observacion, tipoSesion) VALUES
 (1, 1, 1101, '2026-09-14', '08:03:00', 'presente', NULL, 'clase'),
 (2, 1, 1102, '2026-09-15', '08:01:00', 'presente', NULL, 'clase'),
 (3, 1, 1103, '2026-09-16', '11:12:00', 'tardanza', 'Ingreso 12 minutos tarde.', 'clase'),
@@ -407,19 +421,19 @@ INSERT INTO asistencia (idAsistencia, idAlumno, nrcCurso, fecha, hora, estado, o
 (17, 12, 1106, '2026-09-18', '14:02:00', 'presente', NULL, 'laboratorio'),
 (18, 12, 1106, '2026-09-19', '14:01:00', 'presente', NULL, 'laboratorio');
 
-INSERT INTO reclamo (idReclamo, idAlumno, fecha, motivo, descripcion, estado, fechaAtencion, prioridad) VALUES
+INSERT IGNORE INTO reclamo (idReclamo, idAlumno, fecha, motivo, descripcion, estado, fechaAtencion, prioridad) VALUES
 (1, 1, '2026-09-03', 'Actualizacion de nota', 'La nota de la practica 1 aun no aparece en el portal.', 'atendido', '2026-09-04', 'normal'),
 (2, 3, '2026-09-08', 'Cambio de horario', 'Solicita revisar el cruce con una actividad institucional.', 'en_revision', NULL, 'alta'),
 (3, 5, '2026-09-15', 'Constancia de estudios', 'Requiere la constancia para postular a una practica.', 'pendiente', NULL, 'normal'),
 (4, 9, '2026-09-17', 'Cambio de grupo', 'Solicita cambiar de horario por practicas profesionales.', 'pendiente', NULL, 'alta'),
 (5, 10, '2026-09-18', 'Revision de asistencia', 'Solicita revisar una falta registrada durante una clase virtual.', 'en_revision', NULL, 'normal');
 
-INSERT INTO respuesta_reclamo (idRespuesta, idReclamo, fecha, respuesta, estado, observacion, responsable) VALUES
+INSERT IGNORE INTO respuesta_reclamo (idRespuesta, idReclamo, fecha, respuesta, estado, observacion, responsable) VALUES
 (1, 1, '2026-09-04', 'La calificacion fue verificada y ya se encuentra registrada.', 'resuelta', 'Se notifico al alumno por correo.', 'Mesa de ayuda academica'),
 (2, 2, '2026-09-10', 'El cambio de horario fue derivado a coordinacion.', 'en_proceso', NULL, 'Coordinacion academica'),
 (3, 5, '2026-09-19', 'La asistencia sera revisada con el docente del curso.', 'en_proceso', NULL, 'Mesa de ayuda academica');
 
-INSERT INTO pago (idPago, idAlumno, fechaPago, monto, concepto, estado, metodoPago, numeroOperacion, fechaVencimiento, comprobante) VALUES
+INSERT IGNORE INTO pago (idPago, idAlumno, fechaPago, monto, concepto, estado, metodoPago, numeroOperacion, fechaVencimiento, comprobante) VALUES
 (1, 1, '2026-08-09', 420.00, 'Matricula 2026-II', 'pagado', 'transferencia', 'TRX-20260809-001', '2026-08-12', 'COMP-0001'),
 (2, 2, '2026-08-11', 420.00, 'Matricula 2026-II', 'pagado', 'tarjeta', 'POS-20260811-014', '2026-08-12', 'COMP-0002'),
 (3, 3, NULL, 180.00, 'Cuota septiembre 2026', 'pendiente', NULL, NULL, '2026-09-20', NULL),
@@ -431,7 +445,7 @@ INSERT INTO pago (idPago, idAlumno, fechaPago, monto, concepto, estado, metodoPa
 (9, 10, NULL, 180.00, 'Cuota septiembre 2026', 'pendiente', NULL, NULL, '2026-09-20', NULL),
 (10, 11, '2026-08-16', 420.00, 'Matricula 2026-II', 'pagado', 'yape', 'YAP-20260816-125', '2026-08-17', 'COMP-0007');
 
-INSERT INTO constancia (idConstancia, idAlumno, tipo, fechaEmision, estado, numeroConstancia, fechaSolicitud, observacion, formato) VALUES
+INSERT IGNORE INTO constancia (idConstancia, idAlumno, tipo, fechaEmision, estado, numeroConstancia, fechaSolicitud, observacion, formato) VALUES
 (1, 1, 'Constancia de estudios', '2026-09-05', 'emitida', 'CE-2026-0001', '2026-09-03', 'Disponible para descarga.', 'PDF'),
 (2, 3, 'Constancia de matricula', NULL, 'en_proceso', NULL, '2026-09-08', 'Pendiente de validacion administrativa.', 'PDF'),
 (3, 5, 'Constancia de estudios', NULL, 'solicitada', NULL, '2026-09-15', NULL, 'PDF'),
@@ -439,14 +453,199 @@ INSERT INTO constancia (idConstancia, idAlumno, tipo, fechaEmision, estado, nume
 (5, 9, 'Constancia de estudios', NULL, 'solicitada', NULL, '2026-09-17', 'Pendiente de validacion.', 'PDF'),
 (6, 10, 'Constancia de matricula', '2026-09-20', 'emitida', 'CM-2026-0006', '2026-09-18', NULL, 'PDF');
 
-INSERT INTO usuario (idUsuario, correo, contrasena, nombre, rol, idAlumno, idDocente, estado) VALUES
-(1, 'prof@acadecam.edu.pe', 'decam2024', 'Profesor Demo', 'teacher', NULL, 1, 'activo'),
-(2, 'alumno@acadecam.edu.pe', 'alumno2024', 'Alumno Demo', 'student', 1, NULL, 'activo'),
-(3, 'jefe@acadecam.edu.pe', 'jefe2024', 'Jefe Academico', 'jefe', NULL, NULL, 'activo'),
-(4, 'registrador@acadecam.edu.pe', 'reg2024', 'Registrador', 'registrador', NULL, NULL, 'activo');
+INSERT IGNORE INTO usuario (idUsuario, correo, contrasena, nombre, rol, idAlumno, idDocente, estado) VALUES
+(1, 'prof@acadecam.edu.pe', 'scrypt$74dedd7e3fef4237556e98de1f5e4f0a$c67683571abc4a977d230d1e7f6a621908868dd9a7a59f535d3bcca0d52d93066f1c15364a188cc707e7e4c396c6274efa5cba0d4e3a64500c0aa5a6c5a71374', 'Profesor Demo', 'teacher', NULL, 1, 'activo'),
+(2, 'alumno@acadecam.edu.pe', 'scrypt$679b23a562e7bdb4a4a4903878e29bc6$ee19060219f0791b5f2fdd24de82bb5f45c9985c5800668566d92eb2d0cf0bd212ce589e5339b25f6c1d405da43a61895a037ecca7daa506502e22495df9090a', 'Alumno Demo', 'student', 1, NULL, 'activo'),
+(3, 'jefe@acadecam.edu.pe', 'scrypt$d2261a053b8b5db9d84ff928da5ac97f$a56bb591f5467bccc0cff0fdc9dd83e8453f006c2eb18f139717f0265f55337b56889d5a21495ccdf473440b371578159d3f089f11d201ecc7dab22edaac154e', 'Jefe Academico', 'jefe', NULL, NULL, 'activo'),
+(4, 'registrador@acadecam.edu.pe', 'scrypt$aa8e6a86f974f95898ed5611d7bf3411$7aa9c342e027d16482833db2142f21d19178b70f31bc45df81cdf3f5daa4be6d213814df1db3e97db42d447a2e311f383063de0b1b5ee45c90461320f3b8a0b3', 'Registrador', 'registrador', NULL, NULL, 'activo');
 
-INSERT INTO tarea (idTarea, titulo, nrcCurso, fechaAsignacion, fechaEntrega, tipo, estado, color) VALUES
+INSERT IGNORE INTO tarea (idTarea, titulo, nrcCurso, fechaAsignacion, fechaEntrega, tipo, estado, color) VALUES
 (1, 'Modelo entidad-relacion del proyecto', 1102, '2026-09-10', '2026-09-25', 'Proyecto', 'pendiente', '#4F46E5'),
 (2, 'Practica de consultas SQL', 1102, '2026-09-05', '2026-09-18', 'Tarea', 'atrasada', '#F59E0B'),
 (3, 'Informe de algoritmos', 1101, '2026-09-01', '2026-09-12', 'Informe', 'entregada', '#10B981'),
 (4, 'Ejercicios de matematica aplicada', 1103, '2026-09-16', '2026-09-29', 'Practica', 'pendiente', '#14B8A6');
+
+END IF;
+END$$
+DELIMITER ;
+
+CALL tc10_insertar_datos_demo();
+DROP PROCEDURE tc10_insertar_datos_demo;
+
+-- =============================================================
+-- CREACION DE EXTENSIONES ACADEMICAS PARA EL ESQUEMA DE PRUEBA
+-- =============================================================
+
+ALTER TABLE apoderado
+    MODIFY COLUMN dni VARCHAR(15) NULL,
+    MODIFY COLUMN correo VARCHAR(150) NULL;
+
+CREATE TABLE IF NOT EXISTS anio_academico (
+    periodoAcademico VARCHAR(20) NOT NULL,
+    estado ENUM('activo', 'cerrado') NOT NULL DEFAULT 'activo',
+    fechaInicio DATE NULL,
+    fechaFin DATE NULL,
+    PRIMARY KEY (periodoAcademico)
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO anio_academico (periodoAcademico, estado)
+SELECT DISTINCT periodoAcademico, 'cerrado'
+FROM matricula;
+
+ALTER TABLE matricula
+    ADD COLUMN grupo ENUM('A1','B1','A2','B2','A3','B3','A4','B4','A5','B5','A6','B6') NULL
+    AFTER periodoAcademico;
+
+UPDATE matricula m
+INNER JOIN alumno a ON a.idAlumno = m.idAlumno
+SET m.grupo = a.grupo
+WHERE m.idMatricula >= 0
+  AND m.grupo IS NULL
+  AND a.grupo IS NOT NULL;
+
+ALTER TABLE matricula
+    ADD KEY idx_matricula_curso_periodo_grupo
+        (nrcCurso, periodoAcademico, grupo, estado),
+    ADD CONSTRAINT fk_matricula_periodo FOREIGN KEY (periodoAcademico)
+        REFERENCES anio_academico (periodoAcademico)
+        ON UPDATE CASCADE ON DELETE RESTRICT;
+
+CREATE TABLE IF NOT EXISTS asignacion_docente (
+    idAsignacion INT NOT NULL AUTO_INCREMENT,
+    idDocente INT NOT NULL,
+    nrcCurso INT NOT NULL,
+    grupo ENUM('A1','B1','A2','B2','A3','B3','A4','B4','A5','B5','A6','B6') NOT NULL,
+    periodoAcademico VARCHAR(20) NOT NULL,
+    estado ENUM('activa', 'inactiva') NOT NULL DEFAULT 'activa',
+    PRIMARY KEY (idAsignacion),
+    UNIQUE KEY uq_asignacion_docente_curso_grupo_periodo
+        (idDocente, nrcCurso, grupo, periodoAcademico),
+    KEY idx_asignacion_grupo_periodo (grupo, periodoAcademico),
+    CONSTRAINT fk_asignacion_docente_docente FOREIGN KEY (idDocente)
+        REFERENCES docente (idDocente)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_asignacion_docente_curso FOREIGN KEY (nrcCurso)
+        REFERENCES curso (nrcCurso)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_asignacion_docente_periodo FOREIGN KEY (periodoAcademico)
+        REFERENCES anio_academico (periodoAcademico)
+        ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB;
+
+INSERT IGNORE INTO asignacion_docente (idDocente, nrcCurso, grupo, periodoAcademico)
+SELECT DISTINCT s.idDocente, m.nrcCurso, a.grupo, m.periodoAcademico
+FROM seccion s
+INNER JOIN matricula m ON m.idSeccion = s.idSeccion
+INNER JOIN alumno a ON a.idAlumno = m.idAlumno
+WHERE a.grupo IS NOT NULL;
+
+ALTER TABLE usuario
+    ADD COLUMN debeCambiarContrasena TINYINT(1) NOT NULL DEFAULT 1;
+
+UPDATE usuario
+SET debeCambiarContrasena = 0
+WHERE correo IN (
+    'prof@acadecam.edu.pe',
+    'alumno@acadecam.edu.pe',
+    'jefe@acadecam.edu.pe',
+    'registrador@acadecam.edu.pe'
+);
+
+ALTER TABLE calificacion
+    ADD COLUMN idDocente INT NULL,
+    ADD COLUMN periodoAcademico VARCHAR(20) NULL,
+    ADD KEY idx_calificacion_docente_periodo (idDocente, periodoAcademico, nrcCurso),
+    ADD UNIQUE KEY uq_calificacion_alumno_curso_tipo_docente_periodo
+        (idAlumno, nrcCurso, tipoEvaluacion, idDocente, periodoAcademico),
+    ADD CONSTRAINT fk_calificacion_docente FOREIGN KEY (idDocente)
+        REFERENCES docente (idDocente)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    ADD CONSTRAINT fk_calificacion_periodo FOREIGN KEY (periodoAcademico)
+        REFERENCES anio_academico (periodoAcademico)
+        ON UPDATE CASCADE ON DELETE RESTRICT;
+
+ALTER TABLE asistencia
+    ADD COLUMN idDocente INT NULL,
+    ADD COLUMN periodoAcademico VARCHAR(20) NULL,
+    ADD KEY idx_asistencia_docente_periodo (idDocente, periodoAcademico, nrcCurso),
+    ADD CONSTRAINT fk_asistencia_docente FOREIGN KEY (idDocente)
+        REFERENCES docente (idDocente)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    ADD CONSTRAINT fk_asistencia_periodo FOREIGN KEY (periodoAcademico)
+        REFERENCES anio_academico (periodoAcademico)
+        ON UPDATE CASCADE ON DELETE RESTRICT;
+
+UPDATE calificacion cal
+INNER JOIN (
+    SELECT cal0.idCalificacion,
+           MIN(m.periodoAcademico) AS periodoAcademico,
+           MIN(s.idDocente) AS idDocente
+    FROM calificacion cal0
+    INNER JOIN matricula m
+        ON m.idAlumno = cal0.idAlumno
+       AND m.nrcCurso = cal0.nrcCurso
+       AND YEAR(m.fecha) = YEAR(cal0.fecha)
+    INNER JOIN seccion s ON s.idSeccion = m.idSeccion
+    GROUP BY cal0.idCalificacion
+    HAVING COUNT(DISTINCT m.periodoAcademico) = 1
+       AND COUNT(DISTINCT s.idDocente) = 1
+) history ON history.idCalificacion = cal.idCalificacion
+SET cal.idDocente = history.idDocente,
+    cal.periodoAcademico = history.periodoAcademico
+WHERE cal.idCalificacion >= 0
+  AND cal.idDocente IS NULL
+  AND cal.periodoAcademico IS NULL;
+
+UPDATE asistencia att
+INNER JOIN (
+    SELECT att0.idAsistencia,
+           MIN(m.periodoAcademico) AS periodoAcademico,
+           MIN(s.idDocente) AS idDocente
+    FROM asistencia att0
+    INNER JOIN matricula m
+        ON m.idAlumno = att0.idAlumno
+       AND m.nrcCurso = att0.nrcCurso
+       AND YEAR(m.fecha) = YEAR(att0.fecha)
+    INNER JOIN seccion s ON s.idSeccion = m.idSeccion
+    GROUP BY att0.idAsistencia
+    HAVING COUNT(DISTINCT m.periodoAcademico) = 1
+       AND COUNT(DISTINCT s.idDocente) = 1
+) history ON history.idAsistencia = att.idAsistencia
+SET att.idDocente = history.idDocente,
+    att.periodoAcademico = history.periodoAcademico
+WHERE att.idAsistencia >= 0
+  AND att.idDocente IS NULL
+  AND att.periodoAcademico IS NULL;
+
+CREATE TABLE IF NOT EXISTS promedio (
+    idPromedio INT NOT NULL AUTO_INCREMENT,
+    idAlumno INT NOT NULL,
+    nrcCurso INT NOT NULL,
+    idDocente INT NOT NULL,
+    periodoAcademico VARCHAR(20) NOT NULL,
+    promedio DECIMAL(5,2) NOT NULL,
+    actualizadoEn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (idPromedio),
+    UNIQUE KEY uq_promedio_alumno_curso_docente_periodo
+        (idAlumno, nrcCurso, idDocente, periodoAcademico),
+    CONSTRAINT fk_promedio_alumno FOREIGN KEY (idAlumno)
+        REFERENCES alumno (idAlumno)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_promedio_curso FOREIGN KEY (nrcCurso)
+        REFERENCES curso (nrcCurso)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_promedio_docente FOREIGN KEY (idDocente)
+        REFERENCES docente (idDocente)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_promedio_periodo FOREIGN KEY (periodoAcademico)
+        REFERENCES anio_academico (periodoAcademico)
+        ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT chk_promedio_rango CHECK (promedio >= 0 AND promedio <= 20)
+) ENGINE=InnoDB;
+
+INSERT INTO promedio (idAlumno, nrcCurso, idDocente, periodoAcademico, promedio)
+SELECT idAlumno, nrcCurso, idDocente, periodoAcademico, ROUND(AVG(nota), 2)
+FROM calificacion
+WHERE idDocente IS NOT NULL AND periodoAcademico IS NOT NULL
+GROUP BY idAlumno, nrcCurso, idDocente, periodoAcademico
+ON DUPLICATE KEY UPDATE promedio = VALUES(promedio);

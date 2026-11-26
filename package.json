@@ -5,7 +5,8 @@
   "description": "API local para conectar el dashboard con MySQL 8.0",
   "main": "backend/servidor.js",
   "scripts": {
-    "start": "node --env-file=.env backend/servidor.js"
+    "start": "node --env-file=.env backend/servidor.js",
+    "test": "node --test"
   },
   "dependencies": {
     "mysql2": "^3.14.1"

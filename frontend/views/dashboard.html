@@ -60,57 +60,9 @@
       <button class="login-btn" onclick="doLogin()"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> Iniciar sesion</button>
     </div>
   </main>
-  <aside class="login-art2 login-credentials-side" aria-labelledby="login-credentials-title">
+  <aside class="login-art2 login-credentials-side" aria-label="Acceso institucional">
     <div class="login-art2-bg"></div>
     <div class="login-art2-overlay"></div>
-    <div class="login-credentials-inner">
-      <div class="login-hint" style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;margin-top:0">
-        <div id="login-credentials-title" style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#475569;margin-bottom:10px">Credenciales de acceso</div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <button type="button" class="login-credential-option" aria-label="Autocompletar credenciales de maestro" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:box-shadow .15s" onclick="fillLogin('prof@acadecam.edu.pe','decam2024','teacher')" title="Clic para autocompletar">
-            <div style="display:flex;align-items:center;gap:9px">
-              <span style="width:28px;height:28px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">PD</span>
-              <div>
-                <div style="font-size:12px;font-weight:600;color:#1e293b">Maestro</div>
-                <div style="font-size:11px;color:#475569">prof@acadecam.edu.pe</div>
-              </div>
-            </div>
-            <span style="font-size:11px;color:#475569;font-family:monospace;background:#f1f5f9;padding:2px 7px;border-radius:5px">decam2024</span>
-          </button>
-          <button type="button" class="login-credential-option" aria-label="Autocompletar credenciales de alumno" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:box-shadow .15s" onclick="fillLogin('alumno@acadecam.edu.pe','alumno2024','student')" title="Clic para autocompletar">
-            <div style="display:flex;align-items:center;gap:9px">
-              <span style="width:28px;height:28px;border-radius:50%;background:#0f766e;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">AD</span>
-              <div>
-                <div style="font-size:12px;font-weight:600;color:#1e293b">Alumno</div>
-                <div style="font-size:11px;color:#475569">alumno@acadecam.edu.pe</div>
-              </div>
-            </div>
-            <span style="font-size:11px;color:#475569;font-family:monospace;background:#f1f5f9;padding:2px 7px;border-radius:5px">alumno2024</span>
-          </button>
-          <button type="button" class="login-credential-option" aria-label="Autocompletar credenciales de jefe académico" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:box-shadow .15s" onclick="fillLogin('jefe@acadecam.edu.pe','jefe2024','jefe')" title="Clic para autocompletar">
-            <div style="display:flex;align-items:center;gap:9px">
-              <span style="width:28px;height:28px;border-radius:50%;background:#7c3aed;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">JA</span>
-              <div>
-                <div style="font-size:12px;font-weight:600;color:#1e293b">Jefe Académico</div>
-                <div style="font-size:11px;color:#475569">jefe@acadecam.edu.pe</div>
-              </div>
-            </div>
-            <span style="font-size:11px;color:#475569;font-family:monospace;background:#f1f5f9;padding:2px 7px;border-radius:5px">jefe2024</span>
-          </button>
-          <button type="button" class="login-credential-option" aria-label="Autocompletar credenciales de registrador" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;cursor:pointer;transition:box-shadow .15s" onclick="fillLogin('registrador@acadecam.edu.pe','reg2024','registrador')" title="Clic para autocompletar">
-            <div style="display:flex;align-items:center;gap:9px">
-              <span style="width:28px;height:28px;border-radius:50%;background:#0f766e;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0">RG</span>
-              <div>
-                <div style="font-size:12px;font-weight:600;color:#1e293b">Registrador</div>
-                <div style="font-size:11px;color:#475569">registrador@acadecam.edu.pe</div>
-              </div>
-            </div>
-            <span style="font-size:11px;color:#475569;font-family:monospace;background:#f1f5f9;padding:2px 7px;border-radius:5px">reg2024</span>
-          </button>
-        </div>
-        <div style="font-size:10px;color:#475569;margin-top:8px;text-align:center">Clic en cualquier fila para autocompletar</div>
-      </div>
-    </div>
   </aside>
 </div>
 

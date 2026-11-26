@@ -155,14 +155,13 @@
                     <option value="">Seleccionar...</option>
                     <option value="A">A</option>
                     <option value="B">B</option>
-                    <option value="C">C</option>
                   </select>
                 </div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                 <div class="form-group" style="margin:0">
-                  <label class="form-label" for="ci-mat-anio">Año lectivo</label>
-                  <input type="text" class="form-input" id="ci-mat-anio" value="2026">
+                  <label class="form-label" for="ci-mat-periodo">Periodo académico *</label>
+                  <select class="form-input" id="ci-mat-periodo"></select>
                 </div>
                 <div class="form-group" style="margin:0">
                   <label class="form-label" for="ci-mat-turno">Turno</label>
@@ -172,6 +171,11 @@
                     <option value="Noche">Noche</option>
                   </select>
                 </div>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" for="ci-mat-cursos">Cursos de matrícula *</label>
+                <select class="form-input" id="ci-mat-cursos" multiple size="5"></select>
+                <small class="page-sub">Puedes inscribir al alumno en varios cursos del mismo periodo.</small>
               </div>
 
               <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Datos del apoderado</div>
@@ -249,8 +253,7 @@
           <select class="form-input" style="width:auto;padding:6px 10px;font-size:12px" id="matricula-filter-estado" aria-label="Filtrar matrículas por estado" onchange="filterMatriculas()">
             <option value="all">Todos los estados</option>
             <option value="activa">Activa</option>
-            <option value="pendiente">Pendiente</option>
-            <option value="anulada">Anulada</option>
+            <option value="retirada">Retirada</option>
           </select>
           <span style="font-size:12px;color:var(--muted)" id="matricula-count">0 matrículas</span>
         </div>
@@ -271,8 +274,9 @@
               <tr style="border-bottom:2px solid var(--border)">
                 <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">N°</th>
                 <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Alumno</th>
-                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Sección</th>
-                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Año</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Curso</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Grado/Sección</th>
+                <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Periodo</th>
                 <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Fecha</th>
                 <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Estado</th>
                 <th style="text-align:left;padding:10px 16px;font-weight:600;color:var(--navy);white-space:nowrap">Ver</th>
@@ -280,7 +284,7 @@
             </thead>
             <tbody id="matricula-tbody">
               <tr>
-                <td colspan="7" style="text-align:center;padding:30px;color:var(--muted)">
+                <td colspan="8" style="text-align:center;padding:30px;color:var(--muted)">
                   <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="display:block;margin:0 auto 8px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
                   Sin matrículas. Usa el formulario para agregar.
                 </td>

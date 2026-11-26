@@ -11,15 +11,21 @@
           <select class="form-input" id="reg-tipo">
             <option value="alumno">Alumno</option>
             <option value="docente">Docente</option>
-            <option value="administrativo">Administrativo</option>
+            <option value="registrador">Registrador</option>
           </select>
         </div>
         <div class="form-group" style="margin:0"><label class="form-label" for="reg-dni">DNI</label>
           <input type="text" class="form-input" id="reg-dni" placeholder="00000000" maxlength="8">
         </div>
       </div>
+      <div class="form-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="form-group" style="margin:0"><label class="form-label" for="reg-fechanac">Fecha de nacimiento</label><input type="date" class="form-input" id="reg-fechanac"></div>
+        <div class="form-group" style="margin:0"><label class="form-label" for="reg-apo-dni">DNI del apoderado</label><input type="text" inputmode="numeric" pattern="[0-9]{8}" class="form-input" id="reg-apo-dni" maxlength="8"></div>
+      </div>
       <div class="form-group"><label class="form-label" for="reg-email">Correo institucional</label><input type="email" class="form-input" id="reg-email" placeholder="nombre@acadecam.edu.pe"></div>
-      <div class="form-group" style="margin:0"><label class="form-label" for="reg-tel">Teléfono / Contacto</label><input type="text" class="form-input" id="reg-tel" placeholder="+51 999 999 999"></div>
+      <div class="form-group" style="margin:0"><label class="form-label" for="reg-tel">Teléfono / Contacto</label><input type="text" inputmode="numeric" pattern="[0-9]{9}" class="form-input" id="reg-tel" maxlength="9" placeholder="999999999"></div>
+      <div class="form-group"><label class="form-label" for="reg-apoderado">Nombres y apellidos del apoderado</label><input type="text" class="form-input" id="reg-apoderado"></div>
+      <div class="form-group"><label class="form-label" for="reg-apo-tel">Teléfono del apoderado</label><input type="text" inputmode="numeric" pattern="[0-9]{9}" class="form-input" id="reg-apo-tel" maxlength="9" placeholder="999999999"></div>
       <p id="reg-error" role="alert" hidden style="margin:0;color:#b91c1c;font-size:12px"></p>
     </div>
     <div style="display:flex;gap:10px;justify-content:flex-end;padding:16px 20px;border-top:1px solid var(--border)">

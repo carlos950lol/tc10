@@ -9,8 +9,8 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   charset: 'utf8mb4'
 });
-async function obtenerDatosDashboard() {
-  const [alumnos] = await pool.query(`
+async function obtenerDatosDashboard(session = {}) {
+  const [alumnosRows] = await pool.query(`
     SELECT a.*,
       DATE_FORMAT(a.fechaNacimiento, '%Y-%m-%d') AS fechaNacimientoFormulario,
       apo.nombre AS apoderadoNombre,
@@ -33,24 +33,93 @@ async function obtenerDatosDashboard() {
     ) asi ON asi.idAlumno = a.idAlumno
     ORDER BY a.idAlumno
   `);
-  const [docentes] = await pool.query('SELECT * FROM docente ORDER BY idDocente');
-  const [calificaciones] = await pool.query(`
+  const [docentesRows] = await pool.query('SELECT * FROM docente ORDER BY idDocente');
+  const [calificacionesRows] = await pool.query(`
     SELECT cal.*, a.nombre, a.apellido, c.nombreCurso
     FROM calificacion cal
     INNER JOIN alumno a ON a.idAlumno = cal.idAlumno
     INNER JOIN curso c ON c.nrcCurso = cal.nrcCurso
     ORDER BY cal.idAlumno, cal.fecha, cal.idCalificacion
   `);
-  const [asistencias] = await pool.query('SELECT * FROM asistencia ORDER BY fecha DESC, idAsistencia DESC');
-  const [matriculas] = await pool.query(`
-    SELECT m.*, a.grupo, CONCAT(a.nombre, ' ', a.apellido) AS nombreAlumno, s.nombreSeccion
-    FROM matricula m INNER JOIN alumno a ON a.idAlumno = m.idAlumno
-    LEFT JOIN seccion s ON s.idSeccion = m.idSeccion ORDER BY m.idMatricula DESC
+  const [asistenciasRows] = await pool.query('SELECT * FROM asistencia ORDER BY fecha DESC, idAsistencia DESC');
+  const [matriculasRows] = await pool.query(`
+    SELECT m.*, a.grupo AS grupoActual, CONCAT(a.nombre, ' ', a.apellido) AS nombreAlumno,
+           s.nombreSeccion, c.nombreCurso
+    FROM matricula m
+    INNER JOIN alumno a ON a.idAlumno = m.idAlumno
+    INNER JOIN curso c ON c.nrcCurso = m.nrcCurso
+    LEFT JOIN seccion s ON s.idSeccion = m.idSeccion
+    ORDER BY m.idMatricula DESC
   `);
-  const [reclamos] = await pool.query(`
+  const [reclamosRows] = await pool.query(`
     SELECT r.*, CONCAT(a.nombre, ' ', a.apellido) AS nombreAlumno
     FROM reclamo r INNER JOIN alumno a ON a.idAlumno = r.idAlumno ORDER BY r.idReclamo DESC
   `);
+  let alumnos = alumnosRows;
+  let docentes = docentesRows;
+  let calificaciones = calificacionesRows;
+  let asistencias = asistenciasRows;
+  let matriculas = matriculasRows;
+  let reclamos = reclamosRows;
+  let teacherAssignments = [];
+  if (session.role === 'teacher') {
+    const [assignments] = await pool.query(
+      `SELECT idAsignacion, nrcCurso, grupo, periodoAcademico
+       FROM asignacion_docente
+       WHERE idDocente = ? AND estado = 'activa'`,
+      [session.idDocente]
+    );
+    teacherAssignments = assignments;
+    const assignedStudentIds = new Set();
+    teacherAssignments.forEach(assignment => {
+      matriculasRows.forEach(enrollment => {
+        const student = alumnosRows.find(item => item.idAlumno === enrollment.idAlumno);
+        if (enrollment.nrcCurso === assignment.nrcCurso &&
+            enrollment.periodoAcademico === assignment.periodoAcademico &&
+            enrollment.estado === 'activa' && enrollment.grupo === assignment.grupo && student) {
+          assignedStudentIds.add(student.idAlumno);
+        }
+      });
+    });
+    const belongsToTeacher = item => teacherAssignments.some(assignment =>
+      assignment.nrcCurso === item.nrcCurso &&
+      assignment.periodoAcademico === item.periodoAcademico &&
+      (item.idDocente == null || item.idDocente === session.idDocente) &&
+      matriculasRows.some(enrollment =>
+        enrollment.idAlumno === item.idAlumno &&
+        enrollment.nrcCurso === assignment.nrcCurso &&
+        enrollment.periodoAcademico === assignment.periodoAcademico &&
+        enrollment.grupo === assignment.grupo
+      )
+    );
+    alumnos = alumnosRows.filter(student => assignedStudentIds.has(student.idAlumno));
+    docentes = docentesRows.filter(docente => docente.idDocente === session.idDocente);
+    matriculas = matriculasRows.filter(enrollment =>
+      assignedStudentIds.has(enrollment.idAlumno) &&
+      teacherAssignments.some(assignment =>
+        assignment.nrcCurso === enrollment.nrcCurso &&
+        assignment.periodoAcademico === enrollment.periodoAcademico &&
+        assignment.grupo === enrollment.grupo
+      )
+    );
+    calificaciones = calificacionesRows.filter(belongsToTeacher);
+    asistencias = asistenciasRows.filter(belongsToTeacher);
+    reclamos = reclamosRows.filter(reclamo => assignedStudentIds.has(reclamo.idAlumno));
+  } else if (session.role === 'student') {
+    const studentId = Number(session.idAlumno);
+    alumnos = alumnosRows.filter(student => student.idAlumno === studentId);
+    docentes = [];
+    matriculas = matriculasRows.filter(enrollment => enrollment.idAlumno === studentId);
+    calificaciones = calificacionesRows.filter(grade => grade.idAlumno === studentId);
+    asistencias = asistenciasRows.filter(record => record.idAlumno === studentId);
+    reclamos = reclamosRows.filter(record => record.idAlumno === studentId);
+  } else if (session.role === 'registrador') {
+    docentes = [];
+    calificaciones = [];
+    asistencias = [];
+    matriculas = [];
+    reclamos = [];
+  }
   const grupoPorAlumno = new Map(matriculas.map(m => [m.idAlumno, m.nombreSeccion || 'Sin grupo']));
   let tareas = [];
   try { [tareas] = await pool.query('SELECT * FROM tarea ORDER BY fechaEntrega, idTarea'); } catch (error) {
@@ -62,7 +131,7 @@ async function obtenerDatosDashboard() {
     if (!porAlumno.has(cal.idAlumno)) porAlumno.set(cal.idAlumno, []);
     porAlumno.get(cal.idAlumno).push(cal);
   });
-  const gradesTeacher = alumnos.map(alumno => {
+  const gradesTeacher = (session.role === 'teacher' ? alumnos : []).map(alumno => {
     const notas = porAlumno.get(alumno.idAlumno) || [];
     return {
       id: alumno.idAlumno, name: `${alumno.nombre} ${alumno.apellido}`,
@@ -72,7 +141,7 @@ async function obtenerDatosDashboard() {
       tarea: notas[2]?.nota ?? null, proyecto: notas[3]?.nota ?? null
     };
   });
-  const gradesStudent = calificaciones.filter(cal => cal.idAlumno === 1).map(cal => ({
+  const gradesStudent = calificaciones.filter(cal => cal.idAlumno === Number(session.idAlumno)).map(cal => ({
     id: cal.idCalificacion, subject: cal.nombreCurso, teacher: 'Docente asignado',
     e1: cal.nota, e2: null, tarea: null, proyecto: null
   }));

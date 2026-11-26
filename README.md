@@ -5,9 +5,8 @@ Aplicacion web, API local y pruebas automatizadas con Selenium.
 ## Preparacion
 
 1. Instala Node.js, Python, MySQL y Chrome o Edge.
-2. Crea la base de datos importando `sistema_academico.sql`.
+2. Usa una base de datos de pruebas y ejecuta `sistema_academico.sql`. **El script elimina todas las tablas y sus datos en `sistema_academico` y las vuelve a crear**, cargando los datos demo. No lo ejecutes sobre una base con información que quieras conservar.
 3. Copia `.env.example` a `.env` y configura las credenciales locales de MySQL.
-   Para una base ya creada, aplica una vez `backend/migrations/20261111_alumno_grupo_opcional.sql`.
 4. Instala dependencias:
 
 ```powershell
@@ -69,4 +68,4 @@ Para guardar un reporte JUnit junto con las capturas, ejecuta:
 .\.venv\Scripts\python.exe -m pytest -q --junitxml=capturas_evidencia\reporte_selenium.xml
 ```
 
-El esquema de `sistema_academico.sql` incluye sexo, procedencia y direccion para los alumnos, y una tabla `apoderado` relacionada con cada alumno. Los contactos incluidos son datos ficticios para pruebas; sus correos usan el dominio reservado `example.invalid`. El script SQL reinicia las tablas y sus datos, por lo que debe usarse solo para crear o restablecer la base de demostracion.
+El esquema de `sistema_academico.sql` incluye sexo, procedencia y direccion para los alumnos, y una tabla `apoderado` relacionada con cada alumno. Los contactos demo usan el dominio reservado `example.invalid`. El script reinicia las tablas y los datos de prueba en cada ejecucion.

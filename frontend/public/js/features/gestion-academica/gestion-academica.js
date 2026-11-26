@@ -236,6 +236,9 @@ function cargarAlumnoMatriculaSeleccionado(){
 
 function resetMatriculaAlumno(){
   ['ci-mat-buscar-alumno','ci-mat-nombres','ci-mat-apellidos','ci-mat-dni','ci-mat-fechanac','ci-mat-direccion','ci-mat-apoderado','ci-mat-apo-dni','ci-mat-apo-tel','ci-mat-apo-email','ci-mat-obs','ci-mat-sexo','ci-mat-procedencia','ci-mat-alumno-registrado'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ci-mat-nivel','ci-mat-seccion','ci-mat-periodo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const courseSelect=document.getElementById('ci-mat-cursos');
+  if(courseSelect)Array.from(courseSelect.options).forEach(option=>option.selected=false);
   mostrarErrorMatricula('');
   const sugerencias = document.getElementById('ci-mat-alumno-sugerencias');
   if(sugerencias){
@@ -254,8 +257,10 @@ function showMatriculaStep(step){
     const nivel = document.getElementById('ci-mat-nivel')?.value;
     const grado = document.getElementById('ci-mat-grado')?.value;
     const seccion = document.getElementById('ci-mat-seccion')?.value;
-    if(!alumno || !nivel || !grado || !seccion){
-      mostrarErrorMatricula('Selecciona un alumno y completa nivel, grado y sección antes de continuar.');
+    const period=document.getElementById('ci-mat-periodo')?.value;
+    const courses=Array.from(document.getElementById('ci-mat-cursos')?.selectedOptions||[]).filter(option=>option.value);
+    if(!alumno || !nivel || !grado || !seccion || !period || !courses.length){
+      mostrarErrorMatricula('Selecciona alumno, nivel, grado, sección, periodo y al menos un curso antes de continuar.');
       return;
     }
   }
@@ -280,8 +285,10 @@ function showMatriculaStep(step){
     const nivel = document.getElementById('ci-mat-nivel')?.value || '—';
     const grado = document.getElementById('ci-mat-grado')?.value || '—';
     const seccion = document.getElementById('ci-mat-seccion')?.value || '—';
-    const anio = document.getElementById('ci-mat-anio')?.value || '—';
+    const anio = document.getElementById('ci-mat-periodo')?.value || '—';
     const turno = document.getElementById('ci-mat-turno')?.value || '—';
+    const selectedCourses=Array.from(document.getElementById('ci-mat-cursos')?.selectedOptions||[])
+      .filter(option=>option.value);
     const resumen = document.getElementById('matricula-resumen-content');
     if(resumen){
       resumen.innerHTML = `<div style="display:grid;gap:10px">
@@ -290,14 +297,15 @@ function showMatriculaStep(step){
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Nivel</span><span style="font-size:13px;color:var(--navy)">${nivel}</span></div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Grado</span><span style="font-size:13px;color:var(--navy)">${grado}</span></div>
         <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Sección</span><span style="font-size:13px;color:var(--navy)">${seccion}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Año lectivo</span><span style="font-size:13px;color:var(--navy)">${anio}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Periodo académico</span><span style="font-size:13px;color:var(--navy)">${anio}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Cursos</span><span style="font-size:13px;color:var(--navy)">${selectedCourses.map(option=>option.textContent).join(', ')||'—'}</span></div>
         <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="font-size:12px;color:var(--muted)">Turno</span><span style="font-size:13px;color:var(--navy)">${turno}</span></div>
       </div>`;
     }
   }
 }
 // Formulario inline CI_Matricula
-function submitMatriculaForm(){
+async function submitMatriculaForm(){
   mostrarErrorMatricula('');
   const select = document.getElementById('ci-mat-alumno-registrado');
   const alumnoSeleccionado = select && select.value ? allRegistros.find(r => String(r.id) === String(select.value) && r.tipo === 'alumno') : null;
@@ -311,53 +319,85 @@ function submitMatriculaForm(){
   const nivel = document.getElementById('ci-mat-nivel')?.value;
   const grado = document.getElementById('ci-mat-grado')?.value;
   const seccionLetra = document.getElementById('ci-mat-seccion')?.value;
-  if(!nombre || !nivel || !grado || !seccionLetra){
-    mostrarErrorMatricula('Completa nivel, grado y sección para confirmar la matrícula.');
+  const periodoAcademico=document.getElementById('ci-mat-periodo')?.value||'';
+  const selectedCourses=Array.from(document.getElementById('ci-mat-cursos')?.selectedOptions||[])
+    .map(option=>option.value).filter(Boolean);
+  if(!nombre || !nivel || !grado || !seccionLetra || !periodoAcademico || !selectedCourses.length){
+    mostrarErrorMatricula('Completa nivel, grado, sección, periodo y al menos un curso para confirmar la matrícula.');
     return;
   }
 
   const seccion = nivel.charAt(0) + grado + '°' + seccionLetra;
-  const mat = {
-    id: Date.now(),
-    alumnoId: alumnoSeleccionado.id,
-    nro: 'MAT-' + String(allMatriculas.length+1).padStart(4,'0'),
-    nombre,
-    dni,
-    fechanac: alumnoSeleccionado.fechanac || '',
-    sexo: alumnoSeleccionado.sexo || '',
-    procedencia: alumnoSeleccionado.procedencia || 'nuevo',
-    direccion: alumnoSeleccionado.direccion || '',
-    nivel,
-    grado,
-    seccionLetra,
-    seccion,
-    anio: document.getElementById('ci-mat-anio')?.value||'2026',
-    turno: document.getElementById('ci-mat-turno')?.value||'Mañana',
-    apoderado: alumnoSeleccionado.apoderado || '',
-    apoDni: alumnoSeleccionado.apoDni || '',
-    apoTel: alumnoSeleccionado.apoTel || '',
-    apoEmail: alumnoSeleccionado.apoEmail || '',
-    obs: alumnoSeleccionado.obs || '',
-    fecha: new Date().toLocaleDateString('es-PE'),
-    estado: 'activa'
-  };
-  allMatriculas.push(mat);
+  const idAlumno=Number(String(alumnoSeleccionado.id).replace(/^alumno-/,''));
+  const grupo=`${seccionLetra}${grado}`;
+  const confirmButton=document.querySelector("#page-matricula button[onclick='submitMatriculaForm()']");
+  if(confirmButton)confirmButton.disabled=true;
+  let result;
+  try{
+    result=await academicRequest('/api/matricula','POST',{
+      idAlumno,
+      grupo,
+      cursos:selectedCourses.map(Number),
+      periodoAcademico,
+      modalidad:document.getElementById('ci-mat-turno')?.value||'presencial'
+    });
+  }catch(error){
+    mostrarErrorMatricula(error.message||'No se pudo registrar la matrícula en MySQL.');
+    if(confirmButton)confirmButton.disabled=false;
+    return;
+  }
+  const date=new Date().toLocaleDateString('es-PE');
+  const coursesSelect=document.getElementById('ci-mat-cursos');
+  const enrollments=(result.matriculas||[]).map(enrollment=>{
+    const course=Array.from(coursesSelect?.options||[]).find(option=>Number(option.value)===enrollment.nrcCurso);
+    return {
+      id:enrollment.id,
+      alumnoId:idAlumno,
+      nro:'MAT-'+String(enrollment.id).padStart(4,'0'),
+      nombre,
+      dni,
+      fechanac:alumnoSeleccionado.fechanac||'',
+      sexo:alumnoSeleccionado.sexo||'',
+      procedencia:alumnoSeleccionado.procedencia||'nuevo',
+      direccion:alumnoSeleccionado.direccion||'',
+      nivel,
+      grado,
+      seccionLetra,
+      seccion,
+      grupo,
+      curso:course?.textContent||String(enrollment.nrcCurso),
+      nrcCurso:enrollment.nrcCurso,
+      anio:periodoAcademico,
+      turno:document.getElementById('ci-mat-turno')?.value||'presencial',
+      apoderado:alumnoSeleccionado.apoderado||'',
+      apoDni:alumnoSeleccionado.apoDni||'',
+      apoTel:alumnoSeleccionado.apoTel||'',
+      apoEmail:alumnoSeleccionado.apoEmail||'',
+      obs:alumnoSeleccionado.obs||'',
+      fecha:date,
+      estado:'activa'
+    };
+  });
+  allMatriculas.push(...enrollments);
+  alumnoSeleccionado.grupo=grupo;
   renderMatriculas();
   updateMatriculaCount();
   resetMatriculaAlumno();
   updateGradoOptions('ci-mat-nivel','ci-mat-grado');
-  showDtMatricula(mat);
+  if(confirmButton)confirmButton.disabled=false;
+  if(enrollments[0])showDtMatricula(enrollments[0]);
 }
 function showDtMatricula(mat){
   const el = document.getElementById('dt-matricula-detalle');
   if(!el) return;
-  const estadoBadge = e=>({activa:'b-green',pendiente:'b-amber',anulada:'b-red'}[e]||'b-gray');
+  const estadoBadge = e=>({activa:'b-green',retirada:'b-red'}[e]||'b-gray');
   const procLabel = p=>({nuevo:'Alumno nuevo',traslado:'Traslado',promocion:'Promoción interna'}[p]||p||'—');
   const sexoLabel = s=>({M:'Masculino',F:'Femenino'}[s]||'—');
   el.innerHTML=`<div style="display:grid;gap:10px">
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">N° Matrícula</span><span style="font-size:13px;font-weight:700;color:var(--accent)">${mat.nro}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Alumno</span><span style="font-size:13px;font-weight:600;color:var(--navy)">${mat.nombre}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">DNI</span><span style="font-size:13px;color:var(--navy)">${mat.dni||'—'}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Curso</span><span style="font-size:13px;color:var(--navy)">${mat.curso||mat.nrcCurso||'—'}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Fecha de nacimiento</span><span style="font-size:13px;color:var(--navy)">${mat.fechanac||'—'}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Sexo</span><span style="font-size:13px;color:var(--navy)">${sexoLabel(mat.sexo)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Procedencia</span><span style="font-size:13px;color:var(--navy)">${procLabel(mat.procedencia)}</span></div>
@@ -383,15 +423,16 @@ function renderMatriculas(){
   const tbody = document.getElementById('matricula-tbody');
   const f = document.getElementById('matricula-filter-estado')?.value||'all';
   const q = (document.getElementById('matricula-search')?.value||'').toLowerCase();
-  let data = allMatriculas.filter(m=>(f==='all'||m.estado===f)&&(!q||(m.nombre+m.seccion).toLowerCase().includes(q)));
+  let data = allMatriculas.filter(m=>(f==='all'||m.estado===f)&&(!q||`${m.nombre} ${m.seccion} ${m.curso||''}`.toLowerCase().includes(q)));
   if(!data.length){
-    tbody.innerHTML='<tr><td colspan="7" style="text-align:center;padding:40px;color:var(--muted)">No hay matrículas que coincidan.</td></tr>';
+    tbody.innerHTML='<tr><td colspan="8" style="text-align:center;padding:40px;color:var(--muted)">No hay matrículas que coincidan.</td></tr>';
     return;
   }
-  const estadoBadge = e=>({activa:'b-green',pendiente:'b-amber',anulada:'b-red'}[e]||'b-gray');
+  const estadoBadge = e=>({activa:'b-green',retirada:'b-red'}[e]||'b-gray');
   tbody.innerHTML=data.map(m=>`<tr style="border-bottom:1px solid var(--border)">
     <td style="padding:10px 16px;font-size:12px;color:var(--muted);white-space:nowrap">${m.nro}</td>
     <td style="padding:10px 16px;font-size:13px;font-weight:500;color:var(--navy)">${m.nombre}</td>
+    <td style="padding:10px 16px;font-size:13px;color:var(--muted)">${m.curso||m.nrcCurso||'—'}</td>
     <td style="padding:10px 16px;font-size:13px"><span class="badge b-gray">${m.seccion}</span></td>
     <td style="padding:10px 16px;font-size:13px;color:var(--muted)">${m.anio}</td>
     <td style="padding:10px 16px;font-size:13px;color:var(--muted);white-space:nowrap">${m.fecha}</td>
@@ -401,19 +442,22 @@ function renderMatriculas(){
         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
         Ver
       </button>
-        saveDataStore();
     </td>
   </tr>`).join('');
   updateMatriculaCount();
-        saveDataStore();
 }
 
-function toggleMatriculaEstado(id){
+async function toggleMatriculaEstado(id){
   const matricula = allMatriculas.find(item=>item.id===id);
   if(!matricula) return;
-  const estados = ['activa','pendiente','anulada'];
-  matricula.estado = estados[(estados.indexOf(matricula.estado)+1)%estados.length];
-  saveDataStore();
+  const nextStatus=matricula.estado==='activa'?'retirada':'activa';
+  try{
+    await academicRequest(`/api/matricula/${encodeURIComponent(id)}`,'PUT',{estado:nextStatus});
+  }catch(error){
+    mostrarErrorMatricula(error.message||'No se pudo actualizar el estado de la matrícula.');
+    return;
+  }
+  matricula.estado=nextStatus;
   renderMatriculas();
 }
 
@@ -467,8 +511,12 @@ async function saveRegistro(){
   const apellidos = document.getElementById('reg-apellidos')?.value.trim() || '';
   const tipo = document.getElementById('reg-tipo').value;
   const dni = document.getElementById('reg-dni').value.trim();
+  const fechaNacimiento=document.getElementById('reg-fechanac')?.value||'';
+  const apoderadoNombre=document.getElementById('reg-apoderado')?.value.trim()||'';
+  const apoderadoDni=document.getElementById('reg-apo-dni')?.value.trim()||'';
+  const apoderadoTelefono=document.getElementById('reg-apo-tel')?.value.trim()||'';
   const validation = tipo === 'alumno'
-    ? validarRegistroAlumno({nombres, apellidos, dni})
+    ? validarRegistroAlumno({nombres, apellidos, dni, fechaNacimiento, telefono:document.getElementById('reg-tel').value.trim(), apoderadoNombre, apoderadoDni, apoderadoTelefono})
     : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.' : '');
   if(validation){
     mostrarAvisoFormulario('reg-error', validation);
@@ -484,15 +532,18 @@ async function saveRegistro(){
     dni,
     email: document.getElementById('reg-email').value.trim(),
     tel: document.getElementById('reg-tel').value.trim(),
+    fechanac:fechaNacimiento,
+    apoderado:apoderadoNombre,
+    apoDni:apoderadoDni,
+    apoTel:apoderadoTelefono,
     fecha: new Date().toLocaleDateString('es-PE')
   };
   try{
-    const resultado=tipo==='alumno'?await guardarAlumnoEnServidor(reg):null;
+    const resultado=tipo==='alumno'
+      ?await guardarAlumnoEnServidor(reg)
+      :await guardarPersonalEnServidor(reg);
+    reg.id=resultado.id;
     allRegistros.push(reg);
-    saveDataStore();
-    if(resultado?.almacenamiento==='local'){
-      mostrarAvisoFormulario('ci-reg-feedback', 'Registro guardado en este navegador; no se pudo guardar en MySQL.', 'warning');
-    }
   }catch(error){
     console.error('No se pudo guardar el registro.',error);
     mostrarAvisoFormulario('reg-error', error.message||'No se pudo guardar el registro.');
@@ -501,7 +552,7 @@ async function saveRegistro(){
   renderRegistro();
   renderMatriculaAlumnoOptions();
   closeModal('modal-new-registro');
-  ['reg-nombres','reg-apellidos','reg-dni','reg-email','reg-tel'].forEach(id=>{
+  ['reg-nombres','reg-apellidos','reg-dni','reg-email','reg-tel','reg-fechanac','reg-apo-dni','reg-apoderado','reg-apo-tel'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value='';
   });
@@ -510,10 +561,13 @@ async function saveRegistro(){
 function toggleRegistroAlumnoFields(){
   const tipo = document.getElementById('ci-reg-tipo').value;
   const isAlumno = tipo === 'alumno';
+  const isDocente = tipo === 'docente';
   ['ci-reg-sexo-wrap','ci-reg-seccion-wrap','ci-reg-direccion-wrap','ci-reg-apoderado-wrap','ci-reg-fechanac-wrap'].forEach(id=>{
     const el=document.getElementById(id);
     if(el) el.style.display = isAlumno ? '' : 'none';
   });
+  const docenteFields=document.getElementById('ci-reg-docente-wrap');
+  if(docenteFields)docenteFields.style.display=isDocente?'flex':'none';
 }
 function mostrarErrorRegistro(mensaje){
   mostrarAvisoFormulario('ci-reg-error', mensaje);
@@ -524,9 +578,20 @@ async function submitRegistroForm(){
   const apellidos = document.getElementById('ci-reg-apellidos')?.value.trim() || '';
   const tipo = document.getElementById('ci-reg-tipo').value;
   const dni = document.getElementById('ci-reg-dni').value.trim();
+  const fechaNacimiento=document.getElementById('ci-reg-fechanac')?.value||'';
+  const telefono=document.getElementById('ci-reg-tel')?.value.trim()||'';
+  const apoderadoNombre=document.getElementById('ci-reg-apoderado')?.value.trim()||'';
+  const apoderadoDni=document.getElementById('ci-reg-apo-dni')?.value.trim()||'';
+  const apoderadoTelefono=document.getElementById('ci-reg-apo-tel')?.value.trim()||'';
+  const selectedCourses=Array.from(document.getElementById('ci-reg-cursos')?.selectedOptions||[])
+    .map(option=>option.value).filter(Boolean);
+  const assignmentGroup=document.getElementById('ci-reg-grupo')?.value||'';
+  const assignmentPeriod=document.getElementById('ci-reg-periodo')?.value||'';
   const validation = tipo === 'alumno'
-    ? validarRegistroAlumno({nombres, apellidos, dni})
-    : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.' : '');
+    ? validarRegistroAlumno({nombres, apellidos, dni, fechaNacimiento, telefono, apoderadoNombre, apoderadoDni, apoderadoTelefono})
+    : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.'
+      : tipo==='docente'&&(!selectedCourses.length||!assignmentGroup||!assignmentPeriod)
+        ? 'Selecciona al menos un curso, grado y periodo académico para el docente.' : '');
   mostrarErrorRegistro(validation);
   if(validation)return;
   const nombre = buildNombreCompleto(nombres, apellidos);
@@ -541,7 +606,7 @@ async function submitRegistroForm(){
     apellido: apellidos,
     tipo,
     dni,
-    fechanac: document.getElementById('ci-reg-fechanac')?.value||'',
+    fechanac: fechaNacimiento,
     sexo: document.getElementById('ci-reg-sexo')?.value||'',
     nivel,
     grado: gradoNum,
@@ -549,21 +614,26 @@ async function submitRegistroForm(){
     seccion,
     direccion: document.getElementById('ci-reg-direccion')?.value.trim()||'',
     email: document.getElementById('ci-reg-email').value.trim(),
-    tel: document.getElementById('ci-reg-tel').value.trim(),
-    apoderado: document.getElementById('ci-reg-apoderado')?.value.trim()||'',
-    apoTel: document.getElementById('ci-reg-apo-tel')?.value.trim()||'',
+    tel: telefono,
+    apoderado: apoderadoNombre,
+    apoDni: apoderadoDni,
+    apoTel: apoderadoTelefono,
+    asignaciones: tipo==='docente'
+      ? selectedCourses.map(nrcCurso=>({nrcCurso:Number(nrcCurso),grupo:assignmentGroup,periodoAcademico:assignmentPeriod}))
+      : [],
     fecha: new Date().toLocaleDateString('es-PE')
   };
   const button=document.querySelector("#page-registro button[onclick='submitRegistroForm()']");
   if(button)button.disabled=true;
-  let almacenamiento='local';
   try{
     if(tipo==='alumno'){
       const resultado=await guardarAlumnoEnServidor(reg);
-      almacenamiento=resultado.almacenamiento;
+      reg.id=`alumno-${resultado.id}`;
+    }else{
+      const resultado=await guardarPersonalEnServidor(reg);
+      reg.id=`usuario-${resultado.id}`;
     }
     allRegistros.push(reg);
-    saveDataStore();
   }catch(error){
     console.error('No se pudo guardar el registro.',error);
     mostrarErrorRegistro(error.message||'No se pudo guardar el registro.');
@@ -576,17 +646,21 @@ async function submitRegistroForm(){
   if(feedback){
     mostrarAvisoFormulario(
       'ci-reg-feedback',
-      almacenamiento==='mysql'
+      tipo==='alumno'
         ? 'Registro guardado en la base de datos.'
-        : 'Registro guardado en este navegador; no se pudo guardar en MySQL.',
-      almacenamiento==='mysql' ? 'success' : 'warning'
+        : 'Personal registrado. Debe cambiar la contraseña al iniciar sesión.',
+      'success'
     );
   }
   renderRegistro();
   renderMatriculaAlumnoOptions();
   updateRegistroCount();
-  ['ci-reg-nombres','ci-reg-apellidos','ci-reg-dni','ci-reg-fechanac','ci-reg-direccion','ci-reg-email','ci-reg-tel','ci-reg-apoderado','ci-reg-apo-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ci-reg-nombres','ci-reg-apellidos','ci-reg-dni','ci-reg-fechanac','ci-reg-direccion','ci-reg-email','ci-reg-tel','ci-reg-apoderado','ci-reg-apo-dni','ci-reg-apo-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['ci-reg-sexo','ci-reg-nivel','ci-reg-seccionletra'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const courseSelect=document.getElementById('ci-reg-cursos');
+  if(courseSelect)Array.from(courseSelect.options).forEach(option=>option.selected=false);
+  ['ci-reg-grupo','ci-reg-periodo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  toggleRegistroAlumnoFields();
   updateGradoOptions('ci-reg-nivel','ci-reg-grado');
   // Mostrar detalle del registro recién creado
   showDtRegistro(reg);
@@ -720,5 +794,182 @@ function buildSeccion(){
   } else if(CU.role==='student'){
     document.getElementById('sec-grado').textContent=CU.group||'6-A';
     document.getElementById('sec-total').textContent='—';
+  }
+}
+
+function setAcademicOptions(selectId, items, placeholder, getValue, getLabel){
+  const select=document.getElementById(selectId);
+  if(!select)return;
+  select.replaceChildren(new Option(placeholder,''));
+  items.forEach(item=>select.add(new Option(getLabel(item),String(getValue(item)))));
+}
+
+function updateCourseList(courses){
+  const list=document.getElementById('course-list');
+  if(!list)return;
+  list.replaceChildren();
+  if(!courses.length){
+    list.textContent='Aún no hay cursos registrados.';
+    return;
+  }
+  courses.forEach(course=>{
+    const row=document.createElement('div');
+    row.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--border)';
+    const label=document.createElement('span');
+    label.textContent=`${course.nrcCurso} — ${course.nombreCurso}`;
+    const edit=document.createElement('button');
+    edit.type='button';
+    edit.className='btn btn-sm';
+    edit.textContent='Editar';
+    edit.addEventListener('click',()=>editAcademicCourse(course));
+    row.append(label,edit);
+    list.append(row);
+  });
+}
+
+function updateAssignmentList(assignments, courses, teachers){
+  const list=document.getElementById('assignment-list');
+  if(!list)return;
+  list.replaceChildren();
+  if(!assignments.length){
+    list.textContent='Aún no hay asignaciones registradas.';
+    return;
+  }
+  const courseNames=new Map(courses.map(course=>[Number(course.nrcCurso),course.nombreCurso]));
+  const teacherNames=new Map(teachers.map(teacher=>[
+    Number(teacher.idDocente),`${teacher.nombre} ${teacher.apellido}`
+  ]));
+  assignments.forEach(assignment=>{
+    const row=document.createElement('div');
+    row.style.cssText='padding:7px 0;border-bottom:1px solid var(--border);font-size:12px';
+    row.textContent=`${teacherNames.get(Number(assignment.idDocente))||'Docente'} — ${courseNames.get(Number(assignment.nrcCurso))||assignment.nombreCurso} — ${assignment.grupo} — ${assignment.periodoAcademico}`;
+    list.append(row);
+  });
+}
+
+function showAcademicManagementMessage(message, isError=false){
+  const feedback=document.getElementById('academic-management-feedback');
+  if(!feedback)return;
+  feedback.textContent=message;
+  feedback.hidden=!message;
+  feedback.style.color=isError?'#b91c1c':'#166534';
+}
+
+async function academicRequest(path, method='GET', payload){
+  const options={method,headers:{'Content-Type':'application/json'}};
+  if(payload!==undefined)options.body=JSON.stringify(payload);
+  const response=await fetch(CFG.apiUrl+path,options);
+  const result=await response.json();
+  if(!response.ok)throw new Error(result.error||`Error del servidor (HTTP ${response.status}).`);
+  return result;
+}
+
+async function loadAcademicManagementData(){
+  if(!CU||CU.role!=='jefe')return false;
+  try{
+    const [courses, years, teachers, assignments]=await Promise.all([
+      academicRequest('/api/curso'),
+      academicRequest('/api/anio-academico'),
+      academicRequest('/api/docente'),
+      academicRequest('/api/asignacion-docente')
+    ]);
+    setAcademicOptions('assignment-course',courses,'Selecciona un curso',course=>course.nrcCurso,course=>`${course.nombreCurso} (${course.nrcCurso})`);
+    setAcademicOptions('ci-reg-cursos',courses,'',course=>course.nrcCurso,course=>`${course.nombreCurso} (${course.nrcCurso})`);
+    setAcademicOptions('ci-mat-cursos',courses,'',course=>course.nrcCurso,course=>`${course.nombreCurso} (${course.nrcCurso})`);
+    setAcademicOptions('assignment-period',years,'Selecciona un periodo',year=>year.periodoAcademico,year=>year.periodoAcademico);
+    setAcademicOptions('ci-reg-periodo',years,'Selecciona un periodo',year=>year.periodoAcademico,year=>year.periodoAcademico);
+    setAcademicOptions('ci-mat-periodo',years,'Selecciona un periodo',year=>year.periodoAcademico,year=>year.periodoAcademico);
+    setAcademicOptions('assignment-teacher',teachers,'Selecciona un docente',teacher=>teacher.idDocente,teacher=>`${teacher.nombre} ${teacher.apellido}`);
+    const groupOptions=[];
+    for(let grade=1;grade<=6;grade++){
+      groupOptions.push({value:`A${grade}`,label:`${grade}° grado — sección A`});
+      groupOptions.push({value:`B${grade}`,label:`${grade}° grado — sección B`});
+    }
+    setAcademicOptions('assignment-group',groupOptions,'Selecciona grado y sección',item=>item.value,item=>item.label);
+    setAcademicOptions('ci-reg-grupo',groupOptions,'Selecciona grado y sección',item=>item.value,item=>item.label);
+    updateCourseList(courses);
+    updateAssignmentList(assignments,courses,teachers);
+    const yearList=document.getElementById('academic-year-list');
+    if(yearList)yearList.textContent=years.length?years.map(year=>year.periodoAcademico).join(' · '):'Aún no hay periodos registrados.';
+    showAcademicManagementMessage('');
+    return true;
+  }catch(error){
+    console.error('No se pudo cargar la gestión académica.',error);
+    showAcademicManagementMessage(error.message||'No se pudo cargar la gestión académica.',true);
+    return false;
+  }
+}
+
+async function createAcademicCourse(){
+  const code=document.getElementById('course-code')?.value.trim()||'';
+  const name=document.getElementById('course-name')?.value.trim()||'';
+  const description=document.getElementById('course-description')?.value.trim()||'';
+  if(!/^\d+$/.test(code)||!name){
+    showAcademicManagementMessage('Ingresa un NRC numérico y el nombre del curso.',true);
+    return;
+  }
+  try{
+    await academicRequest('/api/curso','POST',{nrcCurso:Number(code),nombreCurso:name,descripcion:description});
+    document.getElementById('course-code').value='';
+    document.getElementById('course-name').value='';
+    document.getElementById('course-description').value='';
+    if(await loadAcademicManagementData())showAcademicManagementMessage('Curso registrado correctamente.');
+  }catch(error){
+    showAcademicManagementMessage(error.message,true);
+  }
+}
+
+async function editAcademicCourse(course){
+  const name=window.prompt('Nombre del curso:',course.nombreCurso);
+  if(name===null)return;
+  const normalized=name.trim();
+  if(!normalized){
+    showAcademicManagementMessage('El nombre del curso es obligatorio.',true);
+    return;
+  }
+  const description=window.prompt('Descripción del curso:',course.descripcion||'');
+  if(description===null)return;
+  try{
+    await academicRequest(`/api/curso/${encodeURIComponent(course.nrcCurso)}`,'PUT',{
+      nombreCurso:normalized,
+      descripcion:description.trim()
+    });
+    if(await loadAcademicManagementData())showAcademicManagementMessage('Curso actualizado correctamente.');
+  }catch(error){
+    showAcademicManagementMessage(error.message,true);
+  }
+}
+
+async function createAcademicYear(){
+  const period=document.getElementById('academic-period')?.value.trim()||'';
+  if(!/^\d{4}-(I|II)$/.test(period)){
+    showAcademicManagementMessage('Usa el formato de periodo AAAA-I o AAAA-II.',true);
+    return;
+  }
+  try{
+    await academicRequest('/api/anio-academico','POST',{periodoAcademico:period});
+    document.getElementById('academic-period').value='';
+    if(await loadAcademicManagementData())showAcademicManagementMessage('Periodo creado sin modificar el historial anterior.');
+  }catch(error){
+    showAcademicManagementMessage(error.message,true);
+  }
+}
+
+async function createAcademicAssignment(){
+  const payload={
+    idDocente:document.getElementById('assignment-teacher')?.value,
+    nrcCurso:document.getElementById('assignment-course')?.value,
+    grupo:document.getElementById('assignment-group')?.value,
+    periodoAcademico:document.getElementById('assignment-period')?.value
+  };
+  if(Object.values(payload).some(value=>!value)){
+    showAcademicManagementMessage('Selecciona docente, curso, grado y periodo.',true);
+    return;
+  }
+  try{
+    await academicRequest('/api/asignacion-docente','POST',payload);
+    showAcademicManagementMessage('Asignación registrada correctamente.');
+  }catch(error){
+    showAcademicManagementMessage(error.message,true);
   }
 }

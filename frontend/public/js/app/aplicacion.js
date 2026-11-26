@@ -7,9 +7,9 @@ document.addEventListener('keydown',event=>{
   control.click();
 });
 
-function fillLogin(email, pass, role){
+function fillLogin(email, role){
   document.getElementById('login-email').value = email;
-  document.getElementById('login-pass').value = pass;
+  document.getElementById('login-pass').value = '';
   selectRole(role);
 }
 function selectRole(r){currentRole=r;document.getElementById('tab-teacher').classList.toggle('active',r==='teacher');document.getElementById('tab-student').classList.toggle('active',r==='student');document.getElementById('tab-jefe').classList.toggle('active',r==='jefe');document.getElementById('tab-registrador').classList.toggle('active',r==='registrador');document.getElementById('login-error').style.display='none';}
@@ -18,31 +18,51 @@ async function doLogin(){
   const pw=document.getElementById('login-pass').value.trim();
   const err=document.getElementById('login-error');
   if(!em||!pw){err.style.display='block';err.textContent='Ingresa tu correo y contrasena.';return;}
-  // Buscar en lista de usuarios registrados
-  const match=USUARIOS.find(u=>u.email===em&&u.pass===pw&&u.role===currentRole);
-  if(!match){
-    err.style.display='block';
-    err.textContent='Correo o contrasena incorrectos. Verifica tus credenciales.';
-    return;
-  }
   try{
     const response=await fetch(CFG.apiUrl+'/api/login',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({email:em,password:pw,role:currentRole})
     });
+    const result=await response.json();
     if(!response.ok){
       err.style.display='block';
-      err.textContent='No fue posible validar la sesión. Verifica tus credenciales e inténtalo nuevamente.';
+      err.textContent=result.error||'No fue posible validar la sesión. Verifica tus credenciales e inténtalo nuevamente.';
       return;
     }
+    if(result.user.mustChangePassword){
+      const newPassword=window.prompt('Por seguridad, debes establecer una nueva contraseña (mínimo 10 caracteres).');
+      if(!newPassword){
+        await fetch(CFG.apiUrl+'/api/logout',{method:'POST'});
+        return;
+      }
+      const changeResponse=await fetch(CFG.apiUrl+'/api/cambiar-contrasena',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({password:newPassword})
+      });
+      const changeResult=await changeResponse.json();
+      if(!changeResponse.ok){
+        await fetch(CFG.apiUrl+'/api/logout',{method:'POST'});
+        err.style.display='block';
+        err.textContent=changeResult.error||'No se pudo actualizar la contraseña.';
+        return;
+      }
+    }
+    const roleLabels={teacher:'Maestro',student:'Alumno',jefe:'Jefe Académico',registrador:'Registrador'};
+    const fullName=result.user.name||result.user.email;
+    CU={
+      id:result.user.id,email:result.user.email,name:fullName,
+      initials:fullName.split(/\s+/).map(part=>part[0]||'').join('').slice(0,2).toUpperCase(),
+      role:result.user.role,roleLabel:roleLabels[result.user.role]||result.user.role,
+      idAlumno:result.user.idAlumno,idDocente:result.user.idDocente
+    };
   }catch(error){
     console.error('No se pudo establecer la sesión con el servidor.',error);
     err.style.display='block';
     err.textContent='No se pudo conectar con el servidor para validar la sesión.';
     return;
   }
-  CU={...match};
   err.style.display='none';
   showLoadingScreen(function(){ initPortal(); });
 }
@@ -73,6 +93,26 @@ async function initPortal(){
   document.getElementById('dash-date').textContent=now.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'}).replace(/^\w/,c=>c.toUpperCase());
   document.getElementById('att-date').value=now.toISOString().split('T')[0];
   applyRoleUI();buildSidebar();buildDashboard();buildSchedule();buildDirectorio();buildProfile();populateSelects();
+  toggleRegistroAlumnoFields();
+  if(CU.role==='jefe')await loadAcademicManagementData();
+  if(CU.role==='registrador'){
+    ['ci-reg-tipo','reg-tipo'].forEach(id=>{
+      const select=document.getElementById(id);
+      if(select){
+        select.value='alumno';
+        select.disabled=true;
+      }
+    });
+  }
+  if(CU.role==='teacher'){
+    await loadAcademicAssignments();
+    if(academicAssignments.length){
+      document.getElementById('att-group-filter').value=String(academicAssignments[0].idAsignacion);
+      document.getElementById('grades-assignment-filter').value=String(academicAssignments[0].idAsignacion);
+      await loadAttGroup();
+      await loadGradesAssignment();
+    }
+  }
   showPage('dashboard');
 }
 
@@ -225,6 +265,7 @@ function sc(ic,icon,val,label){return '<div class="stat-card"><div class="stat-i
 function qb(icon,label,page){return '<div class="quick-btn" role="button" tabindex="0" onclick="showPage(\''+page+'\')"><span class="qi" aria-hidden="true">'+svgIcon(icon)+'</span><span class="ql">'+label+'</span></div>';}
 
 function loadAttGroup(){
+  if(CU&&CU.role==='teacher')return loadAssignedAttendance();
   const g=document.getElementById('att-group-filter').value;
   const students=allStudents.filter(s=>!g||s.group===g);
   const tb=document.getElementById('att-tbody');
@@ -232,8 +273,84 @@ function loadAttGroup(){
   if(!students.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Sin alumnos en este grupo</h3></div></td></tr>';return;}
   tb.innerHTML=students.map((s,i)=>'<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><div class="att-rg"><button class="att-r sel-p" aria-label="Marcar como presente" aria-pressed="true" onclick="setAtt(this,\'P\')">P</button><button class="att-r" aria-label="Marcar como ausente" aria-pressed="false" onclick="setAtt(this,\'A\')">A</button><button class="att-r" aria-label="Marcar como tarde" aria-pressed="false" onclick="setAtt(this,\'L\')">T</button></div></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill bf-ex" style="width:'+(s.att||95)+'%"></div></div><span>'+(s.att||95)+'%</span></div></td><td>0</td><td><span class="badge b-success">Normal</span></td></tr>').join('');
 }
+async function loadAssignedAttendance(){
+  const assignmentId=document.getElementById('att-group-filter').value;
+  const tb=document.getElementById('att-tbody');
+  if(!assignmentId){
+    tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><h3>Selecciona una asignación</h3><p>Elige curso, grado y año académico.</p></div></td></tr>';
+    return;
+  }
+  const fecha=document.getElementById('att-date').value;
+  try{
+    const response=await fetch(`${CFG.apiUrl}/api/asistencia/alumnos?idAsignacion=${encodeURIComponent(assignmentId)}&fecha=${encodeURIComponent(fecha)}`);
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'No se pudo cargar la lista de asistencia.');
+    if(!result.length){
+      tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><h3>No hay alumnos matriculados en esta asignación</h3></div></td></tr>';
+      return;
+    }
+    tb.innerHTML=result.map((student,index)=>{
+      const stateMap={presente:'P',falta:'A',tardanza:'L'};
+      const selected=stateMap[student.estadoAsistencia]||'P';
+      const btn=(value,label)=>`<button class="att-r ${selected===value?({P:'sel-p',A:'sel-a',L:'sel-l'}[value]):''}" aria-label="Marcar como ${label}" aria-pressed="${selected===value}" onclick="setAtt(this,'${value}')">${value==='L'?'T':value}</button>`;
+      return `<tr data-alumno-id="${student.idAlumno}"><td>${index+1}</td><td><span class="td-bold">${student.nombre} ${student.apellido}</span></td><td><div class="att-rg">${btn('P','presente')}${btn('A','ausente')}${btn('L','tarde')}</div></td><td>—</td><td>—</td><td><span class="badge b-gray">${student.grupo}</span></td></tr>`;
+    }).join('');
+  }catch(error){
+    console.error('No se pudo cargar la lista de asistencia.',error);
+    showToast(error.message||'No se pudo cargar la lista de asistencia.');
+  }
+}
 function markAll(v){document.querySelectorAll('#att-tbody .att-rg').forEach(g=>{const buttons=g.querySelectorAll('.att-r');buttons.forEach(b=>{b.classList.remove('sel-p','sel-a','sel-l');b.setAttribute('aria-pressed','false');});const t=buttons[v==='P'?0:v==='A'?1:2];if(t){t.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');t.setAttribute('aria-pressed','true');}});}
 function setAtt(btn,v){const g=btn.parentElement;g.querySelectorAll('.att-r').forEach(b=>{b.classList.remove('sel-p','sel-a','sel-l');b.setAttribute('aria-pressed','false');});btn.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');btn.setAttribute('aria-pressed','true');}
+async function saveAttendance(){
+  const idAsignacion=Number(document.getElementById('att-group-filter').value);
+  const fecha=document.getElementById('att-date').value;
+  const rows=Array.from(document.querySelectorAll('#att-tbody tr[data-alumno-id]'));
+  if(!idAsignacion||!fecha||!rows.length){showToast('Selecciona una asignación con alumnos antes de guardar.');return;}
+  const statusMap={P:'presente',A:'falta',L:'tardanza'};
+  const registros=rows.map(row=>{
+    const selected=row.querySelector('.att-r[aria-pressed="true"]');
+    const value=selected?.textContent.trim()==='T'?'L':selected?.textContent.trim();
+    return {idAlumno:Number(row.dataset.alumnoId),estado:statusMap[value]};
+  });
+  try{
+    const response=await fetch(CFG.apiUrl+'/api/asistencia',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({idAsignacion,fecha,registros})
+    });
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'No se pudieron guardar las asistencias.');
+    showToast('Asistencia guardada correctamente.');
+    await loadAttGroup();
+  }catch(error){
+    console.error('No se pudo guardar la asistencia.',error);
+    showToast(error.message||'No se pudieron guardar las asistencias.');
+  }
+}
+async function loadAttendanceHistory(){
+  const idAsignacion=document.getElementById('att-group-filter').value;
+  const target=document.getElementById('att-history-body');
+  if(!idAsignacion){showToast('Selecciona una asignación.');return;}
+  try{
+    const response=await fetch(`${CFG.apiUrl}/api/asistencia?idAsignacion=${encodeURIComponent(idAsignacion)}`);
+    const result=await response.json();
+    if(!response.ok)throw new Error(result.error||'No se pudo consultar el historial.');
+    target.replaceChildren();
+    if(!result.length){
+      const row=target.insertRow();row.insertCell().colSpan=4;row.cells[0].textContent='No hay asistencias anteriores.';
+      return;
+    }
+    result.forEach(record=>{
+      const row=target.insertRow();
+      [record.fecha,`${record.nombre} ${record.apellido}`,record.nombreCurso,record.estado].forEach(value=>{
+        row.insertCell().textContent=String(value||'');
+      });
+    });
+  }catch(error){
+    console.error('No se pudo consultar el historial de asistencia.',error);
+    showToast(error.message||'No se pudo consultar el historial.');
+  }
+}
 
 function buildStudentAttCalendar(){
   const now=new Date();const y=now.getFullYear(),m=now.getMonth();
@@ -299,7 +416,7 @@ function saveProfile(){const n=document.getElementById('edit-name').value.trim()
 
 function populateSelects(){
   const opts=CFG.groups.map(g=>'<option value="'+g+'">'+g+'</option>').join('');
-  ['grades-group-filter','students-group-filter','att-group-filter','task-group-sel','new-student-group','ag-group'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const base=el.options[0]&&el.options[0].value===''?el.options[0].outerHTML:'';el.innerHTML=base+opts;});
+  ['grades-group-filter','students-group-filter','task-group-sel','new-student-group','ag-group'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const base=el.options[0]&&el.options[0].value===''?el.options[0].outerHTML:'';el.innerHTML=base+opts;});
   renderMatriculaAlumnoOptions();
 }
 
