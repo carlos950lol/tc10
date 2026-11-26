@@ -21,18 +21,19 @@ body{font-family:var(--font);background:var(--cream);color:var(--navy);min-heigh
 #portal-screen.active{flex-direction:row}
 
 /* LOGIN */
-#login-screen{background:var(--navy);align-items:stretch}
-.login-art{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:48px;min-width:0}
+#login-screen.active{display:grid;grid-template-columns:minmax(220px,1fr) minmax(340px,430px) minmax(300px,1fr);grid-template-areas:"art form credentials";background:var(--navy);align-items:stretch}
+.login-art{grid-area:art;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:clamp(24px,5vw,56px);min-width:0;min-height:100vh}
 .login-art-bg{position:absolute;inset:0;background:url("/images/login-campus-v1.jpg") center center/cover no-repeat}
 .login-art-grid{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(10,15,50,.45) 0%,rgba(10,15,50,.6) 100%)}
 .login-art-content{position:relative;z-index:2}
-.login-art-quote{font-family:var(--fd);font-size:28px;font-weight:700;color:#fff;line-height:1.35;margin-bottom:12px;max-width:380px}
+.login-art-quote{font-family:var(--fd);font-size:clamp(20px,2.4vw,28px);font-weight:700;color:#fff;line-height:1.35;margin-bottom:12px;max-width:380px}
 .login-art-sub{font-size:14px;color:rgba(255,255,255,.75);max-width:340px;line-height:1.6}
-.login-form-side{width:440px;min-width:440px;background:var(--white);display:flex;align-items:center;justify-content:center;padding:48px 44px}
-.login-art2{flex:1;position:relative;overflow:hidden;min-width:0}
+.login-form-side{grid-area:form;width:100%;min-width:0;background:var(--white);display:flex;align-items:center;justify-content:center;padding:clamp(32px,5vh,56px) clamp(20px,3vw,40px)}
+.login-art2{grid-area:credentials;position:relative;overflow:hidden;min-width:0;background:var(--navy);display:flex;align-items:center;justify-content:center;padding:clamp(20px,3vw,44px)}
 .login-art2-bg{position:absolute;inset:0;background:url("/images/login-classroom-v1.jpg") center center/cover no-repeat}
 .login-art2-overlay{position:absolute;inset:0;background:linear-gradient(to right,rgba(10,15,50,.3) 0%,rgba(10,15,50,.15) 100%)}
-.login-form-inner{width:100%}
+.login-form-inner{width:100%;max-width:400px}
+.login-credentials-inner{position:relative;z-index:2;width:100%;max-width:380px}
 .login-logo{display:flex;align-items:center;gap:12px;margin-bottom:32px}
 .login-logo-icon{width:42px;height:42px;background:var(--accent);border-radius:11px;display:flex;align-items:center;justify-content:center}
 .login-logo-icon i{color:#fff;font-size:20px}
@@ -52,8 +53,8 @@ body{font-family:var(--font);background:var(--cream);color:var(--navy);min-heigh
 .login-btn{width:100%;padding:12px;background:var(--accent);color:#fff;border:none;border-radius:var(--r);font-family:var(--font);font-size:14px;font-weight:600;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px}
 .login-btn:hover{background:var(--accent2);transform:translateY(-1px);box-shadow:0 4px 14px rgba(79,70,229,.3)}
 .login-error{background:var(--danger-bg);color:var(--danger-text);border:1px solid #fca5a5;border-left:3px solid var(--danger);border-radius:var(--r);padding:10px 13px;font-size:13px;margin-top:10px;display:none;text-align:center}
-.login-hint{font-size:12px;color:var(--slate);text-align:center;margin-top:14px;background:var(--cream);padding:10px;border-radius:8px;line-height:1.8}
-.login-credential-option{width:100%;font:inherit;text-align:left}
+.login-hint{font-size:12px;color:var(--slate);text-align:left;margin-top:0;background:var(--cream);padding:14px 16px;border-radius:10px;line-height:1.8}
+.login-credential-option{width:100%;min-width:0;font:inherit;text-align:left;flex-wrap:wrap}
 .login-credential-option:hover,.login-credential-option:focus-visible{box-shadow:0 2px 8px rgba(0,0,0,.08)}
 .matricula-alumno-suggestion{background:transparent;color:#0f172a}
 .matricula-alumno-suggestion:hover,.matricula-alumno-suggestion:focus-visible{background:rgba(79,70,229,.08);color:#312e81}
@@ -284,11 +285,17 @@ tr:hover td{background:#f8fafc}
 .mobile-bar{display:none;align-items:center;gap:12px;margin-bottom:14px}
 .mobile-menu-btn{background:var(--navy);color:#fff;border:none;border-radius:8px;padding:7px 10px;font-size:17px;cursor:pointer;display:flex;align-items:center}
 
-@media(max-width:1100px){.stat-grid{grid-template-columns:repeat(2,1fr)!important}}
+@media(max-width:1100px){
+  .stat-grid{grid-template-columns:repeat(2,1fr)!important}
+  #login-screen.active{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-areas:"art art" "form credentials"}
+  .login-art{min-height:220px;padding:clamp(24px,5vw,48px)}
+  .login-form-side{padding:40px clamp(20px,4vw,36px)}
+  .login-art2{padding:28px clamp(18px,3vw,32px)}
+}
 @media(max-width:960px){
-  .login-art{display:none}
-  .login-art2{display:none}
-  .login-form-side{width:100%;min-width:unset}
+  .login-form-side{width:100%;min-width:0;padding:32px 20px}
+  .login-form-inner{max-width:440px}
+  .role-tabs.four-cols{grid-template-columns:repeat(2,minmax(0,1fr))}
   .sidebar{position:fixed;left:-260px;z-index:100;transition:left .3s;box-shadow:4px 0 24px rgba(0,0,0,.2)}
   .sidebar.open{left:0}
   .main-content{padding:16px 18px}
@@ -296,6 +303,18 @@ tr:hover td{background:#f8fafc}
   .quick-grid{grid-template-columns:repeat(2,1fr)!important}
   .mobile-bar{display:flex}
   .ai-panel{width:100%}
+}
+@media(max-width:700px){
+  #login-screen.active{grid-template-columns:minmax(0,1fr);grid-template-areas:"art" "form" "credentials"}
+  .login-art{min-height:180px;padding:24px}
+  .login-art-quote{font-size:clamp(20px,6vw,26px)}
+  .login-art-sub{font-size:13px}
+  .login-form-side{padding:32px clamp(18px,6vw,28px)}
+  .login-art2{min-height:0;padding:24px 16px}
+  .login-credentials-inner{max-width:440px}
+  .login-credential-option>div:first-child{min-width:0;flex:1 1 160px}
+  .login-credential-option>div:first-child>div{min-width:0}
+  .login-credential-option>div:first-child>div>div:last-child{overflow-wrap:anywhere}
 }
 
 :focus-visible{outline:3px solid #1D4ED8;outline-offset:2px}
