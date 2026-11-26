@@ -86,7 +86,7 @@ def _unauthenticated_api_status(driver, path):
 
 @pytest.mark.local
 def test_tc001_inicio_sesion_y_modulo_matricula(driver, base_url):
-    wait = login_as(driver, base_url, USERS[3])
+    wait = login_as(driver, base_url, USERS[2])
     assert "active" in driver.find_element(By.ID, "page-dashboard").get_attribute("class").split()
     open_registration_module(driver, wait)
     assert "active" in driver.find_element(By.ID, "page-matricula").get_attribute("class").split()
@@ -95,7 +95,7 @@ def test_tc001_inicio_sesion_y_modulo_matricula(driver, base_url):
 
 @pytest.mark.local
 def test_tc002_busqueda_de_alumno_inexistente(driver, base_url):
-    wait = login_as(driver, base_url, USERS[3])
+    wait = login_as(driver, base_url, USERS[2])
     open_registration_module(driver, wait)
 
     message = _query_student_matriculas(driver, wait, "ALU-NO-EXISTE")
@@ -177,17 +177,16 @@ def test_tc006_jefe_academico_consulta_matriculas(driver, base_url, mysql_availa
     assert "Valeria Castillo Rojas" in results
 
 
-@pytest.mark.mysql
-def test_tc007_registrador_consulta_matriculas(driver, base_url, mysql_available):
-    wait = login_as(driver, base_url, USERS[3])
-    open_registration_module(driver, wait)
+@pytest.mark.local
+def test_tc007_registrador_no_gestiona_matriculas(driver, base_url):
+    login_as(driver, base_url, USERS[3])
+    assert not driver.find_element(By.ID, "nav-matricula").is_displayed()
 
-    message = _query_student_matriculas(driver, wait, "1")
-    results = driver.find_element(By.ID, "matricula-consulta-resultados").text
+    driver.execute_script("showPage('matricula')")
+    assert "active" not in driver.find_element(By.ID, "page-matricula").get_attribute("class").split()
 
-    assert "se encontraron" in message.lower()
-    assert "MAT-0001" in results
-    assert "74125896" in results
+    response = _unauthenticated_api_status(driver, "/api/matricula")
+    assert response["status"] == 403
 
 
 @pytest.mark.local
@@ -201,7 +200,7 @@ def test_tc008_estudiante_no_consulta_matriculas(driver, base_url):
 
 @pytest.mark.local
 def test_tc009_turno_de_matricula_aparece_en_resumen(driver, base_url):
-    wait = login_as(driver, base_url, USERS[3])
+    wait = login_as(driver, base_url, USERS[2])
     open_registration_module(driver, wait)
     _, _, summary = _prepare_matricula_flow(driver, wait, turno="Tarde")
     assert "Turno" in summary
@@ -212,7 +211,7 @@ def test_tc009_turno_de_matricula_aparece_en_resumen(driver, base_url):
 def test_tc010_rechaza_matricula_sin_datos_academicos(
     driver, base_url, mysql_available
 ):
-    wait = login_as(driver, base_url, USERS[3])
+    wait = login_as(driver, base_url, USERS[2])
     open_registration_module(driver, wait)
     _select_existing_student(driver, wait)
     driver.find_element(
@@ -233,7 +232,7 @@ def test_tc010_rechaza_matricula_sin_datos_academicos(
 def test_tc011_doble_confirmacion_no_crea_dos_matriculas(
     driver, base_url, mysql_available
 ):
-    wait = login_as(driver, base_url, USERS[3])
+    wait = login_as(driver, base_url, USERS[2])
     open_registration_module(driver, wait)
     _select_existing_student(driver, wait)
     Select(driver.find_element(By.ID, "ci-mat-nivel")).select_by_value("Primaria")
@@ -317,7 +316,7 @@ def test_tc014_filtro_sin_matriculas_muestra_estado_vacio(driver, base_url):
 
 @pytest.mark.local
 def test_tc015_consulta_coincide_con_matricula_creada(driver, base_url):
-    wait = login_as(driver, base_url, USERS[3])
+    wait = login_as(driver, base_url, USERS[2])
     open_registration_module(driver, wait)
     student_id, student_name, summary = _prepare_matricula_flow(driver, wait)
     assert student_name in summary
@@ -372,7 +371,7 @@ def test_tc017_consulta_api_requiere_sesion(driver, base_url):
 
 @pytest.mark.local
 def test_tc018_flujo_completo_de_matricula(driver, base_url):
-    wait = login_as(driver, base_url, USERS[3])
+    wait = login_as(driver, base_url, USERS[2])
     open_registration_module(driver, wait)
     _, student_name, summary = _prepare_matricula_flow(driver, wait, turno="Mañana")
     assert student_name in summary
@@ -390,34 +389,58 @@ def test_tc018_flujo_completo_de_matricula(driver, base_url):
     )
 
 
-@pytest.mark.mysql
-def test_tc019_registrador_consulta_matricula_demo(
-    driver, base_url, mysql_available
-):
-    wait = login_as(driver, base_url, USERS[3])
-    open_registration_module(driver, wait)
+@pytest.mark.local
+def test_tc019_registrador_puede_registrar_alumnos(driver, base_url):
+    login_as(driver, base_url, USERS[3])
+    assert driver.find_element(By.ID, "nav-registro").is_displayed()
+    assert not driver.find_element(By.ID, "nav-matricula").is_displayed()
+    driver.find_element(By.ID, "nav-registro").click()
+    assert "active" in driver.find_element(By.ID, "page-registro").get_attribute("class").split()
 
-    message = _query_student_matriculas(driver, wait, "1")
-    results = driver.find_element(By.ID, "matricula-consulta-resultados").text
-
-    assert "se encontraron" in message.lower()
-    assert "MAT-0001" in results
-    assert "Valeria Castillo Rojas" in results
-    assert "74125896" in results
+    response = driver.execute_async_script(
+        """
+        const done = arguments[arguments.length - 1];
+        fetch('/api/alumno', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({})
+        }).then(response => done({status: response.status}))
+          .catch(error => done({error: String(error)}));
+        """
+    )
+    assert response["status"] == 400
 
 
 @pytest.mark.local
 def test_tc020_estudiante_no_accede_al_modulo_ni_a_la_api(driver, base_url):
     login_as(driver, base_url, USERS[1])
     assert not driver.find_element(By.ID, "nav-matricula").is_displayed()
+    assert not driver.find_element(By.ID, "nav-registro").is_displayed()
 
     driver.execute_script("showPage('matricula')")
     matricula_page = driver.find_element(By.ID, "page-matricula")
     assert "active" not in matricula_page.get_attribute("class").split()
 
+    driver.execute_script("showPage('registro')")
+    registro_page = driver.find_element(By.ID, "page-registro")
+    assert "active" not in registro_page.get_attribute("class").split()
+
     response = _unauthenticated_api_status(driver, "/api/matricula")
     assert response["status"] == 403
     assert "matriculas" not in response.get("body", "").lower()
+
+    registration_response = driver.execute_async_script(
+        """
+        const done = arguments[arguments.length - 1];
+        fetch('/api/alumno', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({})
+        }).then(response => done({status: response.status}))
+          .catch(error => done({error: String(error)}));
+        """
+    )
+    assert registration_response["status"] == 403
 
 
 @pytest.mark.local

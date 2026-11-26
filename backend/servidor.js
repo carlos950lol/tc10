@@ -184,7 +184,7 @@ async function request(req, res) {
       }
     }
     if (url.pathname === '/api/alumno' && req.method === 'POST') {
-      if (session.role !== 'jefe') {
+      if (!['jefe', 'registrador'].includes(session.role)) {
         return json(res, 403, {error: 'Tu rol no tiene permiso para registrar alumnos.'});
       }
       try {
@@ -202,7 +202,7 @@ async function request(req, res) {
     }
     const tabla = tableFrom(url.pathname);
     if (!tabla) return json(res, 404, {error: 'Ruta no encontrada'});
-    if (tabla === 'matricula' && !['jefe', 'registrador'].includes(session.role)) {
+    if (tabla === 'matricula' && session.role !== 'jefe') {
       return json(res, 403, {error: 'Tu rol no tiene permiso para acceder a matrículas.'});
     }
 

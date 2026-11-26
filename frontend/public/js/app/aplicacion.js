@@ -114,8 +114,8 @@ function applyRoleUI(){
   const showSecRec = isT || isS;
   document.getElementById('nav-seccion').style.display = showSecRec ? '' : 'none';
   document.getElementById('nav-reclamo').style.display = showSecRec ? '' : 'none';
-  document.getElementById('nav-registro').style.display = isJ ? '' : 'none';
-  document.getElementById('nav-matricula').style.display = isAdm ? '' : 'none';
+  document.getElementById('nav-registro').style.display = isAdm ? '' : 'none';
+  document.getElementById('nav-matricula').style.display = isJ ? '' : 'none';
   // Para admin: ocultar nav items de teacher/student que no aplican
   if(isAdm){
     const hideForAdmin=['calificaciones','asistencia','tareas','alumnos','horario'];
@@ -195,8 +195,8 @@ function buildDashboard(){
   // Dashboard para Registrador
   if(isR){
     document.getElementById('dash-stats').innerHTML=sc('si-blue','ti-users',stats.alumnos??allStudents.length,'Alumnos matriculados')+sc('si-green','ti-clipboard-check',allMatriculas.length,'Matrículas este mes')+sc('si-amber','ti-checklist',stats.tareas??0,'Pendientes')+sc('si-teal','ti-home',new Set(allStudents.map(s=>s.group)).size,'Secciones');
-    document.getElementById('dash-quick').innerHTML=qb('ti-clipboard-list','Matrícula','matricula')+qb('ti-home','Sección','seccion')+qb('ti-message-circle','Reclamos','reclamo')+qb('ti-user','Mi Perfil','perfil');
-    document.getElementById('dash-left').innerHTML='<div class="card"><div class="card-header"><h2>Panel Registrador</h2></div><div class="card-pad"><p style="font-size:13px;color:var(--muted);line-height:1.6">Bienvenido al panel de Registrador. Gestiona las <b>Matrículas</b> de alumnos, consulta las <b>Secciones</b> disponibles y atiende los <b>Reclamos</b>.</p><div style="display:flex;gap:10px;margin-top:14px"><button class="btn btn-primary btn-sm" onclick="showPage(\'matricula\')">Ir a Matrícula</button></div></div></div>';
+    document.getElementById('dash-quick').innerHTML=qb('ti-users','Registro','registro')+qb('ti-home','Sección','seccion')+qb('ti-message-circle','Reclamos','reclamo')+qb('ti-user','Mi Perfil','perfil');
+    document.getElementById('dash-left').innerHTML='<div class="card"><div class="card-header"><h2>Panel Registrador</h2></div><div class="card-pad"><p style="font-size:13px;color:var(--muted);line-height:1.6">Bienvenido al panel de Registrador. Gestiona el <b>Registro</b> de alumnos y personal, consulta las <b>Secciones</b> disponibles y atiende los <b>Reclamos</b>.</p><div style="display:flex;gap:10px;margin-top:14px"><button class="btn btn-primary btn-sm" onclick="showPage(\'registro\')">Ir a Registro</button></div></div></div>';
     document.getElementById('dash-right').innerHTML='';
   }
 }
@@ -312,7 +312,8 @@ function showPage(id){
     document.title='Acceso | Academia Decam';
     return;
   }
-  if(id==='matricula'&&CU.role!=='jefe'&&CU.role!=='registrador'){id='dashboard';}
+  if(id==='registro'&&!['jefe','registrador'].includes(CU.role)){id='dashboard';}
+  if(id==='matricula'&&CU.role!=='jefe'){id='dashboard';}
   // Redirigir admin a dashboard si intenta ver páginas de teacher/student
   if(CU&&(CU.role==='jefe'||CU.role==='registrador')){
     const blocked=['calificaciones','asistencia','tareas','alumnos','horario'];
