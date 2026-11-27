@@ -137,31 +137,32 @@
               <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
                 <div class="form-group" style="margin:0">
                   <label class="form-label" for="ci-mat-nivel">Nivel *</label>
-                  <select class="form-input" id="ci-mat-nivel" onchange="updateGradoOptions('ci-mat-nivel','ci-mat-grado');mostrarErrorMatricula('')">
+                  <select class="form-input" id="ci-mat-nivel" onchange="updateGradoOptions('ci-mat-nivel','ci-mat-grado');loadMatriculaCourses();mostrarErrorMatricula('')">
                     <option value="">Seleccionar...</option>
-                    <option value="Primaria">Primaria</option>
-                    <option value="Secundaria">Secundaria</option>
+                    <option value="primaria">Primaria</option>
+                    <option value="secundaria">Secundaria</option>
                   </select>
                 </div>
                 <div class="form-group" style="margin:0">
                   <label class="form-label" for="ci-mat-grado">Grado *</label>
-                  <select class="form-input" id="ci-mat-grado" disabled onchange="mostrarErrorMatricula('')">
+                  <select class="form-input" id="ci-mat-grado" disabled onchange="loadMatriculaCourses();mostrarErrorMatricula('')">
                     <option value="">Selecciona nivel primero</option>
                   </select>
                 </div>
                 <div class="form-group" style="margin:0">
                   <label class="form-label" for="ci-mat-seccion">Sección *</label>
-                  <select class="form-input" id="ci-mat-seccion" onchange="mostrarErrorMatricula('')">
+                  <select class="form-input" id="ci-mat-seccion" onchange="loadMatriculaCourses();mostrarErrorMatricula('')">
                     <option value="">Seleccionar...</option>
                     <option value="A">A</option>
                     <option value="B">B</option>
+                    <option value="C">C</option>
                   </select>
                 </div>
               </div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
                 <div class="form-group" style="margin:0">
                   <label class="form-label" for="ci-mat-periodo">Periodo académico *</label>
-                  <select class="form-input" id="ci-mat-periodo"></select>
+                  <select class="form-input" id="ci-mat-periodo" onchange="loadMatriculaCourses()"></select>
                 </div>
                 <div class="form-group" style="margin:0">
                   <label class="form-label" for="ci-mat-turno">Turno</label>
@@ -174,8 +175,8 @@
               </div>
               <div class="form-group" style="margin:0">
                 <label class="form-label" for="ci-mat-cursos">Cursos de matrícula *</label>
-                <select class="form-input" id="ci-mat-cursos" multiple size="5"></select>
-                <small class="page-sub">Puedes inscribir al alumno en varios cursos del mismo periodo.</small>
+                <select class="form-input" id="ci-mat-cursos" multiple size="5" disabled></select>
+                <small class="page-sub" id="ci-mat-cursos-hint">Selecciona grado, sección y periodo para ver los cursos con docente asignado.</small>
               </div>
 
               <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Datos del apoderado</div>

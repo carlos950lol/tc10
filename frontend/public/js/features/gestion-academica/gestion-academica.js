@@ -1,6 +1,8 @@
 // ========================
 // FUNCIONES NUEVAS PÁGINAS
 // ========================
+let matriculaCourseRequest=0;
+
 function buildNombreCompleto(nombres, apellidos){
   return [nombres, apellidos].filter(Boolean).map(valor => String(valor).trim()).filter(Boolean).join(' ');
 }
@@ -80,7 +82,7 @@ function updateGradoOptions(nivelId, gradoId){
     gradoSel.disabled = true;
     return;
   }
-  const max = nivel === 'Primaria' ? 6 : 5;
+  const max = nivel === 'primaria' ? 6 : 5;
   let opts = '<option value="">Seleccionar...</option>';
   for(let i=1;i<=max;i++){ opts += `<option value="${i}">${i}°</option>`; }
   gradoSel.innerHTML = opts;
@@ -237,8 +239,9 @@ function cargarAlumnoMatriculaSeleccionado(){
 function resetMatriculaAlumno(){
   ['ci-mat-buscar-alumno','ci-mat-nombres','ci-mat-apellidos','ci-mat-dni','ci-mat-fechanac','ci-mat-direccion','ci-mat-apoderado','ci-mat-apo-dni','ci-mat-apo-tel','ci-mat-apo-email','ci-mat-obs','ci-mat-sexo','ci-mat-procedencia','ci-mat-alumno-registrado'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   ['ci-mat-nivel','ci-mat-seccion','ci-mat-periodo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  const courseSelect=document.getElementById('ci-mat-cursos');
-  if(courseSelect)Array.from(courseSelect.options).forEach(option=>option.selected=false);
+  const gradeSelect=document.getElementById('ci-mat-grado');
+  if(gradeSelect)gradeSelect.value='';
+  loadMatriculaCourses();
   mostrarErrorMatricula('');
   const sugerencias = document.getElementById('ci-mat-alumno-sugerencias');
   if(sugerencias){
@@ -327,16 +330,17 @@ async function submitMatriculaForm(){
     return;
   }
 
-  const seccion = nivel.charAt(0) + grado + '°' + seccionLetra;
+  const seccionLabel = formatAcademicSection(nivel, grado, seccionLetra);
   const idAlumno=Number(String(alumnoSeleccionado.id).replace(/^alumno-/,''));
-  const grupo=`${seccionLetra}${grado}`;
   const confirmButton=document.querySelector("#page-matricula button[onclick='submitMatriculaForm()']");
   if(confirmButton)confirmButton.disabled=true;
   let result;
   try{
     result=await academicRequest('/api/matricula','POST',{
       idAlumno,
-      grupo,
+      nivel,
+      grado:Number(grado),
+      seccion:seccionLetra,
       cursos:selectedCourses.map(Number),
       periodoAcademico,
       modalidad:document.getElementById('ci-mat-turno')?.value||'presencial'
@@ -362,9 +366,8 @@ async function submitMatriculaForm(){
       direccion:alumnoSeleccionado.direccion||'',
       nivel,
       grado,
+      seccion:seccionLabel,
       seccionLetra,
-      seccion,
-      grupo,
       curso:course?.textContent||String(enrollment.nrcCurso),
       nrcCurso:enrollment.nrcCurso,
       anio:periodoAcademico,
@@ -379,7 +382,8 @@ async function submitMatriculaForm(){
     };
   });
   allMatriculas.push(...enrollments);
-  alumnoSeleccionado.grupo=grupo;
+  alumnoSeleccionado.seccion=seccionLetra;
+  alumnoSeleccionado.section=seccionLabel;
   renderMatriculas();
   updateMatriculaCount();
   resetMatriculaAlumno();
@@ -512,11 +516,14 @@ async function saveRegistro(){
   const tipo = document.getElementById('reg-tipo').value;
   const dni = document.getElementById('reg-dni').value.trim();
   const fechaNacimiento=document.getElementById('reg-fechanac')?.value||'';
+  const nivel=document.getElementById('reg-nivel')?.value||'';
+  const grado=document.getElementById('reg-grado')?.value||'';
+  const seccion=document.getElementById('reg-seccion')?.value||'';
   const apoderadoNombre=document.getElementById('reg-apoderado')?.value.trim()||'';
   const apoderadoDni=document.getElementById('reg-apo-dni')?.value.trim()||'';
   const apoderadoTelefono=document.getElementById('reg-apo-tel')?.value.trim()||'';
   const validation = tipo === 'alumno'
-    ? validarRegistroAlumno({nombres, apellidos, dni, fechaNacimiento, telefono:document.getElementById('reg-tel').value.trim(), apoderadoNombre, apoderadoDni, apoderadoTelefono})
+    ? validarRegistroAlumno({nombres, apellidos, dni, fechaNacimiento, telefono:document.getElementById('reg-tel').value.trim(), apoderadoNombre, apoderadoDni, apoderadoTelefono, nivel, grado, seccion})
     : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.' : '');
   if(validation){
     mostrarAvisoFormulario('reg-error', validation);
@@ -530,6 +537,9 @@ async function saveRegistro(){
     apellido: apellidos,
     tipo,
     dni,
+    nivel,
+    grado,
+    seccion,
     email: document.getElementById('reg-email').value.trim(),
     tel: document.getElementById('reg-tel').value.trim(),
     fechanac:fechaNacimiento,
@@ -550,12 +560,23 @@ async function saveRegistro(){
     return;
   }
   renderRegistro();
+  if(tipo==='docente'&&CU?.role==='jefe')await loadAcademicManagementData();
   renderMatriculaAlumnoOptions();
   closeModal('modal-new-registro');
   ['reg-nombres','reg-apellidos','reg-dni','reg-email','reg-tel','reg-fechanac','reg-apo-dni','reg-apoderado','reg-apo-tel'].forEach(id=>{
     const el = document.getElementById(id);
     if(el) el.value='';
   });
+  ['reg-nivel','reg-grado','reg-seccion'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el)el.value='';
+  });
+  updateGradoOptions('reg-nivel','reg-grado');
+}
+function toggleLegacyRegistrationFields(){
+  const isAlumno=document.getElementById('reg-tipo')?.value==='alumno';
+  const placement=document.getElementById('reg-school-placement');
+  if(placement)placement.style.display=isAlumno?'grid':'none';
 }
 // Función para el formulario inline de CI_Registro
 function toggleRegistroAlumnoFields(){
@@ -583,22 +604,23 @@ async function submitRegistroForm(){
   const apoderadoNombre=document.getElementById('ci-reg-apoderado')?.value.trim()||'';
   const apoderadoDni=document.getElementById('ci-reg-apo-dni')?.value.trim()||'';
   const apoderadoTelefono=document.getElementById('ci-reg-apo-tel')?.value.trim()||'';
+  const nivel=document.getElementById('ci-reg-nivel')?.value||'';
+  const grado=document.getElementById('ci-reg-grado')?.value||'';
+  const seccion=document.getElementById('ci-reg-seccionletra')?.value||'';
   const selectedCourses=Array.from(document.getElementById('ci-reg-cursos')?.selectedOptions||[])
     .map(option=>option.value).filter(Boolean);
-  const assignmentGroup=document.getElementById('ci-reg-grupo')?.value||'';
+  const assignmentLevel=document.getElementById('ci-reg-docente-nivel')?.value||'';
+  const assignmentGrade=document.getElementById('ci-reg-docente-grado')?.value||'';
+  const assignmentSection=document.getElementById('ci-reg-docente-seccion')?.value||'';
   const assignmentPeriod=document.getElementById('ci-reg-periodo')?.value||'';
   const validation = tipo === 'alumno'
-    ? validarRegistroAlumno({nombres, apellidos, dni, fechaNacimiento, telefono, apoderadoNombre, apoderadoDni, apoderadoTelefono})
+    ? validarRegistroAlumno({nombres, apellidos, dni, fechaNacimiento, telefono, apoderadoNombre, apoderadoDni, apoderadoTelefono, nivel, grado, seccion})
     : (!nombres || !apellidos ? 'Los nombres y apellidos son obligatorios.'
-      : tipo==='docente'&&(!selectedCourses.length||!assignmentGroup||!assignmentPeriod)
-        ? 'Selecciona al menos un curso, grado y periodo académico para el docente.' : '');
+      : tipo==='docente'&&(!selectedCourses.length||!assignmentLevel||!assignmentGrade||!assignmentSection||!assignmentPeriod)
+        ? 'Selecciona curso, nivel, grado, sección y periodo académico del docente.' : '');
   mostrarErrorRegistro(validation);
   if(validation)return;
   const nombre = buildNombreCompleto(nombres, apellidos);
-  const nivel = document.getElementById('ci-reg-nivel')?.value||'';
-  const gradoNum = document.getElementById('ci-reg-grado')?.value||'';
-  const seccionLetra = document.getElementById('ci-reg-seccionletra')?.value||'';
-  const seccion = (nivel&&gradoNum&&seccionLetra) ? (nivel.charAt(0)+gradoNum+'°'+seccionLetra) : '';
   const reg = {
     id: Date.now(),
     nombre,
@@ -609,9 +631,9 @@ async function submitRegistroForm(){
     fechanac: fechaNacimiento,
     sexo: document.getElementById('ci-reg-sexo')?.value||'',
     nivel,
-    grado: gradoNum,
-    seccionLetra,
+    grado,
     seccion,
+    seccionLabel:formatAcademicSection(nivel,grado,seccion),
     direccion: document.getElementById('ci-reg-direccion')?.value.trim()||'',
     email: document.getElementById('ci-reg-email').value.trim(),
     tel: telefono,
@@ -619,7 +641,10 @@ async function submitRegistroForm(){
     apoDni: apoderadoDni,
     apoTel: apoderadoTelefono,
     asignaciones: tipo==='docente'
-      ? selectedCourses.map(nrcCurso=>({nrcCurso:Number(nrcCurso),grupo:assignmentGroup,periodoAcademico:assignmentPeriod}))
+      ? selectedCourses.map(nrcCurso=>({
+        nrcCurso:Number(nrcCurso),nivel:assignmentLevel,grado:Number(assignmentGrade),
+        seccion:assignmentSection,periodoAcademico:assignmentPeriod
+      }))
       : [],
     fecha: new Date().toLocaleDateString('es-PE')
   };
@@ -656,12 +681,13 @@ async function submitRegistroForm(){
   renderMatriculaAlumnoOptions();
   updateRegistroCount();
   ['ci-reg-nombres','ci-reg-apellidos','ci-reg-dni','ci-reg-fechanac','ci-reg-direccion','ci-reg-email','ci-reg-tel','ci-reg-apoderado','ci-reg-apo-dni','ci-reg-apo-tel'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  ['ci-reg-sexo','ci-reg-nivel','ci-reg-seccionletra'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ci-reg-sexo','ci-reg-nivel','ci-reg-seccionletra','ci-reg-docente-nivel','ci-reg-docente-seccion'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   const courseSelect=document.getElementById('ci-reg-cursos');
   if(courseSelect)Array.from(courseSelect.options).forEach(option=>option.selected=false);
-  ['ci-reg-grupo','ci-reg-periodo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['ci-reg-docente-grado','ci-reg-periodo'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
   toggleRegistroAlumnoFields();
   updateGradoOptions('ci-reg-nivel','ci-reg-grado');
+  updateGradoOptions('ci-reg-docente-nivel','ci-reg-docente-grado');
   // Mostrar detalle del registro recién creado
   showDtRegistro(reg);
 }
@@ -677,7 +703,7 @@ function showDtRegistro(reg){
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">DNI</span><span style="font-size:13px;color:var(--navy)">${reg.dni||'—'}</span></div>
     ${isAlumno?`<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Fecha de nacimiento</span><span style="font-size:13px;color:var(--navy)">${reg.fechanac||'—'}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Sexo</span><span style="font-size:13px;color:var(--navy)">${sexoLabel(reg.sexo)}</span></div>
-    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Sección</span><span class="badge b-gray">${reg.seccion||'—'}</span></div>
+    <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Sección</span><span class="badge b-gray">${reg.seccionLabel||formatAcademicSection(reg.nivel,reg.grado,reg.seccion)}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Dirección</span><span style="font-size:13px;color:var(--navy);text-align:right;max-width:60%">${reg.direccion||'—'}</span></div>`:''}
     <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--muted)">Correo</span><span style="font-size:13px;color:var(--navy)">${reg.email||'—'}</span></div>
     <div style="display:flex;justify-content:space-between;padding:8px 0${isAlumno?';border-bottom:1px solid var(--border)':''}"><span style="font-size:12px;color:var(--muted)">Teléfono</span><span style="font-size:13px;color:var(--navy)">${reg.tel||'—'}</span></div>
@@ -789,10 +815,10 @@ function buildSeccion(){
     // Listar alumnos
     const el = document.getElementById('seccion-alumnos-list');
     if(allStudents.length){
-      el.innerHTML=allStudents.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div class="u-av av-s" style="width:32px;height:32px;font-size:11px;flex-shrink:0">${s.initials||s.name.charAt(0)}</div><div><div style="font-size:13px;font-weight:500;color:var(--navy)">${s.name}</div><div style="font-size:12px;color:var(--muted)">${s.group||'Sin grupo'}</div></div></div>`).join('');
+      el.innerHTML=allStudents.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div class="u-av av-s" style="width:32px;height:32px;font-size:11px;flex-shrink:0">${s.initials||s.name.charAt(0)}</div><div><div style="font-size:13px;font-weight:500;color:var(--navy)">${s.name}</div><div style="font-size:12px;color:var(--muted)">${s.section||'Sin sección'}</div></div></div>`).join('');
     }
   } else if(CU.role==='student'){
-    document.getElementById('sec-grado').textContent=CU.group||'6-A';
+    document.getElementById('sec-grado').textContent=allStudents[0]?.section||'Sin sección';
     document.getElementById('sec-total').textContent='—';
   }
 }
@@ -842,7 +868,7 @@ function updateAssignmentList(assignments, courses, teachers){
   assignments.forEach(assignment=>{
     const row=document.createElement('div');
     row.style.cssText='padding:7px 0;border-bottom:1px solid var(--border);font-size:12px';
-    row.textContent=`${teacherNames.get(Number(assignment.idDocente))||'Docente'} — ${courseNames.get(Number(assignment.nrcCurso))||assignment.nombreCurso} — ${assignment.grupo} — ${assignment.periodoAcademico}`;
+    row.textContent=`${teacherNames.get(Number(assignment.idDocente))||'Docente'} — ${courseNames.get(Number(assignment.nrcCurso))||assignment.nombreCurso} — ${formatAcademicSection(assignment.nivel,assignment.grado,assignment.seccion)} — ${assignment.periodoAcademico}`;
     list.append(row);
   });
 }
@@ -864,6 +890,42 @@ async function academicRequest(path, method='GET', payload){
   return result;
 }
 
+async function loadMatriculaCourses(){
+  const courseSelect=document.getElementById('ci-mat-cursos');
+  if(!courseSelect)return;
+  const requestId=++matriculaCourseRequest;
+  const level=document.getElementById('ci-mat-nivel')?.value||'';
+  const grade=document.getElementById('ci-mat-grado')?.value||'';
+  const section=document.getElementById('ci-mat-seccion')?.value||'';
+  const period=document.getElementById('ci-mat-periodo')?.value||'';
+  const hint=document.getElementById('ci-mat-cursos-hint');
+  const maxGrade=level==='primaria'?6:level==='secundaria'?5:0;
+  if(!maxGrade||!grade||Number(grade)>maxGrade||!['A','B','C'].includes(section)||!/^\d{4}-(I|II)$/.test(period)){
+    setAcademicOptions('ci-mat-cursos',[],'Primero selecciona grado, sección y periodo',course=>course.nrcCurso,course=>course.nombreCurso);
+    courseSelect.disabled=true;
+    if(hint)hint.textContent='Selecciona grado, sección y periodo para ver los cursos con docente asignado.';
+    return;
+  }
+  courseSelect.disabled=true;
+  setAcademicOptions('ci-mat-cursos',[],'Cargando cursos...',course=>course.nrcCurso,course=>course.nombreCurso);
+  try{
+    const courses=await academicRequest(
+      `/api/curso?nivel=${encodeURIComponent(level)}&grado=${encodeURIComponent(grade)}&seccion=${encodeURIComponent(section)}&periodo=${encodeURIComponent(period)}`
+    );
+    if(requestId!==matriculaCourseRequest)return;
+    setAcademicOptions('ci-mat-cursos',courses,courses.length?'Selecciona cursos':'No hay cursos disponibles',course=>course.nrcCurso,course=>`${course.nombreCurso} (${course.nrcCurso})`);
+    courseSelect.disabled=!courses.length;
+    if(hint)hint.textContent=courses.length
+      ? 'Puedes elegir varios cursos ofrecidos para este grado y periodo.'
+      : 'No hay cursos con docente asignado para este grado y periodo.';
+  }catch(error){
+    if(requestId!==matriculaCourseRequest)return;
+    setAcademicOptions('ci-mat-cursos',[],'No se pudieron cargar los cursos',course=>course.nrcCurso,course=>course.nombreCurso);
+    courseSelect.disabled=true;
+    if(hint)hint.textContent=error.message||'No se pudieron cargar los cursos disponibles.';
+  }
+}
+
 async function loadAcademicManagementData(){
   if(!CU||CU.role!=='jefe')return false;
   try{
@@ -875,18 +937,24 @@ async function loadAcademicManagementData(){
     ]);
     setAcademicOptions('assignment-course',courses,'Selecciona un curso',course=>course.nrcCurso,course=>`${course.nombreCurso} (${course.nrcCurso})`);
     setAcademicOptions('ci-reg-cursos',courses,'',course=>course.nrcCurso,course=>`${course.nombreCurso} (${course.nrcCurso})`);
-    setAcademicOptions('ci-mat-cursos',courses,'',course=>course.nrcCurso,course=>`${course.nombreCurso} (${course.nrcCurso})`);
+    setAcademicOptions('ci-mat-cursos',[],'Primero selecciona grado, sección y periodo',course=>course.nrcCurso,course=>course.nombreCurso);
+    document.getElementById('ci-mat-cursos').disabled=true;
     setAcademicOptions('assignment-period',years,'Selecciona un periodo',year=>year.periodoAcademico,year=>year.periodoAcademico);
     setAcademicOptions('ci-reg-periodo',years,'Selecciona un periodo',year=>year.periodoAcademico,year=>year.periodoAcademico);
     setAcademicOptions('ci-mat-periodo',years,'Selecciona un periodo',year=>year.periodoAcademico,year=>year.periodoAcademico);
-    setAcademicOptions('assignment-teacher',teachers,'Selecciona un docente',teacher=>teacher.idDocente,teacher=>`${teacher.nombre} ${teacher.apellido}`);
-    const groupOptions=[];
-    for(let grade=1;grade<=6;grade++){
-      groupOptions.push({value:`A${grade}`,label:`${grade}° grado — sección A`});
-      groupOptions.push({value:`B${grade}`,label:`${grade}° grado — sección B`});
-    }
-    setAcademicOptions('assignment-group',groupOptions,'Selecciona grado y sección',item=>item.value,item=>item.label);
-    setAcademicOptions('ci-reg-grupo',groupOptions,'Selecciona grado y sección',item=>item.value,item=>item.label);
+    setAcademicOptions('assignment-teacher',teachers,'Selecciona un docente',teacher=>teacher.idDocente,teacher=>`${teacher.nombre} ${teacher.apellido} — ${teacher.nombreCurso}`);
+    updateGradoOptions('assignment-level','assignment-grade');
+    updateGradoOptions('ci-reg-docente-nivel','ci-reg-docente-grado');
+    const assignmentTeacher=document.getElementById('assignment-teacher');
+    const assignmentCourse=document.getElementById('assignment-course');
+    const teacherById=new Map(teachers.map(teacher=>[Number(teacher.idDocente),teacher]));
+    const updateTeacherCourse=()=>{
+      const teacher=teacherById.get(Number(assignmentTeacher.value));
+      assignmentCourse.value=teacher?String(teacher.nrcCurso):'';
+      assignmentCourse.disabled=true;
+    };
+    assignmentTeacher.onchange=updateTeacherCourse;
+    updateTeacherCourse();
     updateCourseList(courses);
     updateAssignmentList(assignments,courses,teachers);
     const yearList=document.getElementById('academic-year-list');
@@ -959,16 +1027,18 @@ async function createAcademicAssignment(){
   const payload={
     idDocente:document.getElementById('assignment-teacher')?.value,
     nrcCurso:document.getElementById('assignment-course')?.value,
-    grupo:document.getElementById('assignment-group')?.value,
+    nivel:document.getElementById('assignment-level')?.value,
+    grado:Number(document.getElementById('assignment-grade')?.value),
+    seccion:document.getElementById('assignment-section')?.value,
     periodoAcademico:document.getElementById('assignment-period')?.value
   };
   if(Object.values(payload).some(value=>!value)){
-    showAcademicManagementMessage('Selecciona docente, curso, grado y periodo.',true);
+    showAcademicManagementMessage('Selecciona docente, curso, nivel, grado, sección y periodo.',true);
     return;
   }
   try{
     await academicRequest('/api/asignacion-docente','POST',payload);
-    showAcademicManagementMessage('Asignación registrada correctamente.');
+    if(await loadAcademicManagementData())showAcademicManagementMessage('Asignación registrada correctamente.');
   }catch(error){
     showAcademicManagementMessage(error.message,true);
   }

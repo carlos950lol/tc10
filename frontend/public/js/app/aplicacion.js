@@ -7,9 +7,9 @@ document.addEventListener('keydown',event=>{
   control.click();
 });
 
-function fillLogin(email, role){
+function fillLogin(email, role, password){
   document.getElementById('login-email').value = email;
-  document.getElementById('login-pass').value = '';
+  document.getElementById('login-pass').value = password;
   selectRole(role);
 }
 function selectRole(r){currentRole=r;document.getElementById('tab-teacher').classList.toggle('active',r==='teacher');document.getElementById('tab-student').classList.toggle('active',r==='student');document.getElementById('tab-jefe').classList.toggle('active',r==='jefe');document.getElementById('tab-registrador').classList.toggle('active',r==='registrador');document.getElementById('login-error').style.display='none';}
@@ -107,7 +107,7 @@ async function initPortal(){
   if(CU.role==='teacher'){
     await loadAcademicAssignments();
     if(academicAssignments.length){
-      document.getElementById('att-group-filter').value=String(academicAssignments[0].idAsignacion);
+      document.getElementById('att-assignment-filter').value=String(academicAssignments[0].idAsignacion);
       document.getElementById('grades-assignment-filter').value=String(academicAssignments[0].idAsignacion);
       await loadAttGroup();
       await loadGradesAssignment();
@@ -145,11 +145,11 @@ function applyRoleUI(){
   document.getElementById('horario-restrict').style.display=(isS)?'flex':'none';
   document.getElementById('cal-restrict-notice').style.display=isT?'none':'flex';
   document.getElementById('att-pg-title').innerHTML=isT?'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>Control de Asistencia':'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><polyline points="9 16 11 18 15 14"/></svg>Mi Asistencia';
-  document.getElementById('att-pg-sub').textContent=isT?'Registro diario por grupo':'Tu historial de asistencia';
+  document.getElementById('att-pg-sub').textContent=isT?'Registro diario por sección':'Tu historial de asistencia';
   document.getElementById('tasks-pg-title').innerHTML=isT?'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg>Tareas y Evaluaciones':'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg>Mis Tareas';
-  document.getElementById('tasks-pg-sub').textContent=isT?'Actividades de tus grupos':'Actividades pendientes y entregadas';
+  document.getElementById('tasks-pg-sub').textContent=isT?'Actividades de tus secciones':'Actividades pendientes y entregadas';
   document.getElementById('cal-title').innerHTML=isT?'<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="2"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>Calificaciones':'<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>Mis Calificaciones';
-  document.getElementById('cal-sub').textContent=isT?'Registro academico por grupo':'Tu desempeno academico';
+  document.getElementById('cal-sub').textContent=isT?'Registro académico por sección':'Tu desempeño académico';
   // Nuevas secciones: Sección y Reclamo visibles para teacher y student
   const showSecRec = isT || isS;
   document.getElementById('nav-seccion').style.display = showSecRec ? '' : 'none';
@@ -180,7 +180,7 @@ function applyRoleUI(){
   // Actualizar texto de sección según rol
   if(isT){
     document.getElementById('seccion-pg-title').innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> Mi Sección';
-    document.getElementById('seccion-pg-sub').textContent='Tu grupo asignado y alumnos';
+    document.getElementById('seccion-pg-sub').textContent='Tus secciones asignadas y alumnos';
     document.getElementById('reclamo-pg-sub').textContent='Reclamos de tus alumnos';
     document.getElementById('reclamo-btn-text').textContent='Ver reclamos';
   } else if(isS){
@@ -220,21 +220,21 @@ function buildDashboard(){
   } else if(isS) {
     const studentGrades=allGrades.map(g=>g.e1).filter(v=>v!=null).map(Number);
     const studentAverage=studentGrades.length?Math.round(studentGrades.reduce((a,b)=>a+b,0)/studentGrades.length):0;
-    document.getElementById('dash-stats').innerHTML=sc('si-green','ti-award',studentAverage,'Promedio general')+sc('si-blue','ti-checklist',allTasks.filter(t=>t.status==='pending'||t.status==='late').length,'Tareas pendientes')+sc('si-teal','ti-calendar-check',(allStudents.find(s=>s.id===1)?.att??0)+'%','% Asistencia')+sc('si-amber','ti-star','—','Lugar en grupo');
+    document.getElementById('dash-stats').innerHTML=sc('si-green','ti-award',studentAverage,'Promedio general')+sc('si-blue','ti-checklist',allTasks.filter(t=>t.status==='pending'||t.status==='late').length,'Tareas pendientes')+sc('si-teal','ti-calendar-check',(allStudents.find(s=>s.id===1)?.att??0)+'%','% Asistencia')+sc('si-amber','ti-star','—','Lugar en sección');
     document.getElementById('dash-quick').innerHTML=qb('ti-clipboard-list','Mis Calificaciones','calificaciones')+qb('ti-user-check','Mi Asistencia','asistencia')+qb('ti-checklist','Mis Tareas','tareas')+qb('ti-calendar-event','Horario','horario');
     document.getElementById('dash-left').innerHTML='<div class="card"><div class="card-header"><h2><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Tareas proximas</h2><button class="btn btn-sm" onclick="showPage(\'tareas\')">Ver todas</button></div><div class="empty-state" style="padding:28px"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg><h3>Sin tareas pendientes</h3><p>Todo al dia!</p></div></div>';
     document.getElementById('dash-right').innerHTML='<div class="card"><div class="card-header"><h2><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>Mis materias</h2></div><div class="empty-state" style="padding:28px"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg><h3>Sin calificaciones aun</h3><p>Apareceran cuando tu maestro las registre.</p></div></div>';
   }
   // Dashboard para Jefe Académico
   if(isJ){
-    document.getElementById('dash-stats').innerHTML=sc('si-blue','ti-users',stats.alumnos??allStudents.length,'Alumnos registrados')+sc('si-green','ti-checklist',allMatriculas.filter(m=>m.estado==='activa').length,'Matrículas activas')+sc('si-amber','ti-clipboard-check',new Set(allStudents.map(s=>s.group)).size,'Secciones activas')+sc('si-red','ti-alert-triangle',allReclamos.filter(r=>r.estado==='pendiente').length,'Reclamos pendientes');
+    document.getElementById('dash-stats').innerHTML=sc('si-blue','ti-users',stats.alumnos??allStudents.length,'Alumnos registrados')+sc('si-green','ti-checklist',allMatriculas.filter(m=>m.estado==='activa').length,'Matrículas activas')+sc('si-amber','ti-clipboard-check',new Set(allStudents.map(s=>s.sectionCode)).size,'Secciones activas')+sc('si-red','ti-alert-triangle',allReclamos.filter(r=>r.estado==='pendiente').length,'Reclamos pendientes');
     document.getElementById('dash-quick').innerHTML=qb('ti-users','Registro','registro')+qb('ti-clipboard-list','Matrícula','matricula')+qb('ti-home','Sección','seccion')+qb('ti-message-circle','Reclamos','reclamo');
     document.getElementById('dash-left').innerHTML='<div class="card"><div class="card-header"><h2>Panel Jefe Académico</h2></div><div class="card-pad"><p style="font-size:13px;color:var(--muted);line-height:1.6">Bienvenido al panel de Jefe Académico. Aquí puedes gestionar el <b>Registro</b> de alumnos y personal, administrar las <b>Matrículas</b>, revisar las <b>Secciones</b> y atender los <b>Reclamos</b>.</p><div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap"><button class="btn btn-primary btn-sm" onclick="showPage(\'registro\')">Ir a Registro</button><button class="btn btn-sm" onclick="showPage(\'matricula\')">Ir a Matríccula</button></div></div></div>';
     document.getElementById('dash-right').innerHTML='';
   }
   // Dashboard para Registrador
   if(isR){
-    document.getElementById('dash-stats').innerHTML=sc('si-blue','ti-users',stats.alumnos??allStudents.length,'Alumnos matriculados')+sc('si-green','ti-clipboard-check',allMatriculas.length,'Matrículas este mes')+sc('si-amber','ti-checklist',stats.tareas??0,'Pendientes')+sc('si-teal','ti-home',new Set(allStudents.map(s=>s.group)).size,'Secciones');
+    document.getElementById('dash-stats').innerHTML=sc('si-blue','ti-users',stats.alumnos??allStudents.length,'Alumnos matriculados')+sc('si-green','ti-clipboard-check',allMatriculas.length,'Matrículas este mes')+sc('si-amber','ti-checklist',stats.tareas??0,'Pendientes')+sc('si-teal','ti-home',new Set(allStudents.map(s=>s.sectionCode)).size,'Secciones');
     document.getElementById('dash-quick').innerHTML=qb('ti-users','Registro','registro')+qb('ti-home','Sección','seccion')+qb('ti-message-circle','Reclamos','reclamo')+qb('ti-user','Mi Perfil','perfil');
     document.getElementById('dash-left').innerHTML='<div class="card"><div class="card-header"><h2>Panel Registrador</h2></div><div class="card-pad"><p style="font-size:13px;color:var(--muted);line-height:1.6">Bienvenido al panel de Registrador. Gestiona el <b>Registro</b> de alumnos y personal, consulta las <b>Secciones</b> disponibles y atiende los <b>Reclamos</b>.</p><div style="display:flex;gap:10px;margin-top:14px"><button class="btn btn-primary btn-sm" onclick="showPage(\'registro\')">Ir a Registro</button></div></div></div>';
     document.getElementById('dash-right').innerHTML='';
@@ -266,15 +266,15 @@ function qb(icon,label,page){return '<div class="quick-btn" role="button" tabind
 
 function loadAttGroup(){
   if(CU&&CU.role==='teacher')return loadAssignedAttendance();
-  const g=document.getElementById('att-group-filter').value;
-  const students=allStudents.filter(s=>!g||s.group===g);
+  const section=document.getElementById('att-assignment-filter').value;
+  const students=allStudents.filter(s=>!section||s.sectionCode===section);
   const tb=document.getElementById('att-tbody');
-  if(!g){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h3>Selecciona un grupo</h3></div></td></tr>';return;}
-  if(!students.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Sin alumnos en este grupo</h3></div></td></tr>';return;}
+  if(!section){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h3>Selecciona una sección</h3></div></td></tr>';return;}
+  if(!students.length){tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Sin alumnos en esta sección</h3></div></td></tr>';return;}
   tb.innerHTML=students.map((s,i)=>'<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><div class="att-rg"><button class="att-r sel-p" aria-label="Marcar como presente" aria-pressed="true" onclick="setAtt(this,\'P\')">P</button><button class="att-r" aria-label="Marcar como ausente" aria-pressed="false" onclick="setAtt(this,\'A\')">A</button><button class="att-r" aria-label="Marcar como tarde" aria-pressed="false" onclick="setAtt(this,\'L\')">T</button></div></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill bf-ex" style="width:'+(s.att||95)+'%"></div></div><span>'+(s.att||95)+'%</span></div></td><td>0</td><td><span class="badge b-success">Normal</span></td></tr>').join('');
 }
 async function loadAssignedAttendance(){
-  const assignmentId=document.getElementById('att-group-filter').value;
+  const assignmentId=document.getElementById('att-assignment-filter').value;
   const tb=document.getElementById('att-tbody');
   if(!assignmentId){
     tb.innerHTML='<tr><td colspan="6"><div class="empty-state"><h3>Selecciona una asignación</h3><p>Elige curso, grado y año académico.</p></div></td></tr>';
@@ -293,7 +293,7 @@ async function loadAssignedAttendance(){
       const stateMap={presente:'P',falta:'A',tardanza:'L'};
       const selected=stateMap[student.estadoAsistencia]||'P';
       const btn=(value,label)=>`<button class="att-r ${selected===value?({P:'sel-p',A:'sel-a',L:'sel-l'}[value]):''}" aria-label="Marcar como ${label}" aria-pressed="${selected===value}" onclick="setAtt(this,'${value}')">${value==='L'?'T':value}</button>`;
-      return `<tr data-alumno-id="${student.idAlumno}"><td>${index+1}</td><td><span class="td-bold">${student.nombre} ${student.apellido}</span></td><td><div class="att-rg">${btn('P','presente')}${btn('A','ausente')}${btn('L','tarde')}</div></td><td>—</td><td>—</td><td><span class="badge b-gray">${student.grupo}</span></td></tr>`;
+      return `<tr data-alumno-id="${student.idAlumno}"><td>${index+1}</td><td><span class="td-bold">${student.nombre} ${student.apellido}</span></td><td><div class="att-rg">${btn('P','presente')}${btn('A','ausente')}${btn('L','tarde')}</div></td><td>—</td><td>—</td><td><span class="badge b-gray">${formatAcademicSection(student.nivel,student.grado,student.seccion)}</span></td></tr>`;
     }).join('');
   }catch(error){
     console.error('No se pudo cargar la lista de asistencia.',error);
@@ -303,7 +303,7 @@ async function loadAssignedAttendance(){
 function markAll(v){document.querySelectorAll('#att-tbody .att-rg').forEach(g=>{const buttons=g.querySelectorAll('.att-r');buttons.forEach(b=>{b.classList.remove('sel-p','sel-a','sel-l');b.setAttribute('aria-pressed','false');});const t=buttons[v==='P'?0:v==='A'?1:2];if(t){t.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');t.setAttribute('aria-pressed','true');}});}
 function setAtt(btn,v){const g=btn.parentElement;g.querySelectorAll('.att-r').forEach(b=>{b.classList.remove('sel-p','sel-a','sel-l');b.setAttribute('aria-pressed','false');});btn.classList.add(v==='P'?'sel-p':v==='A'?'sel-a':'sel-l');btn.setAttribute('aria-pressed','true');}
 async function saveAttendance(){
-  const idAsignacion=Number(document.getElementById('att-group-filter').value);
+  const idAsignacion=Number(document.getElementById('att-assignment-filter').value);
   const fecha=document.getElementById('att-date').value;
   const rows=Array.from(document.querySelectorAll('#att-tbody tr[data-alumno-id]'));
   if(!idAsignacion||!fecha||!rows.length){showToast('Selecciona una asignación con alumnos antes de guardar.');return;}
@@ -328,7 +328,7 @@ async function saveAttendance(){
   }
 }
 async function loadAttendanceHistory(){
-  const idAsignacion=document.getElementById('att-group-filter').value;
+  const idAsignacion=document.getElementById('att-assignment-filter').value;
   const target=document.getElementById('att-history-body');
   if(!idAsignacion){showToast('Selecciona una asignación.');return;}
   try{
@@ -378,14 +378,14 @@ function filterTasks(f,btn){taskFilter=f;document.querySelectorAll('#tasks-tabs 
 function toggleTask(el){el.classList.toggle('done');el.setAttribute('aria-checked',String(el.classList.contains('done')));el.innerHTML=el.classList.contains('done')?'<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>':'';}
 
 function filterStudents(q){
-  const gf=document.getElementById('students-group-filter').value;
+  const section=document.getElementById('students-section-filter').value;
   const sf=document.getElementById('students-status-filter').value;
-  const f=allStudents.filter(s=>(!q||s.name.toLowerCase().includes(q.toLowerCase()))&&(!gf||s.group===gf)&&(!sf||s.status===sf));
+  const f=allStudents.filter(s=>(!q||s.name.toLowerCase().includes(q.toLowerCase()))&&(!section||s.sectionCode===section)&&(!sf||s.status===sf));
   document.getElementById('students-count').textContent=f.length+' alumno'+(f.length!==1?'s':'');
   const tb=document.getElementById('students-tbody');
   if(!f.length){tb.innerHTML='<tr><td colspan="8"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Sin resultados</h3></div></td></tr>';return;}
   tb.innerHTML=f.map((s,i)=>{const bc=s.status==='Excelente'?'b-success':s.status==='Bien'?'b-info':s.status==='Regular'?'b-warning':'b-danger';
-    return '<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><span class="badge b-gray">'+s.group+'</span></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill '+getBar(s.avg)+'" style="width:'+(s.avg?s.avg*5:0)+'%"></div></div><b>'+(s.avg??'—')+'</b></div></td><td>'+(s.att??'—')+'%</td><td>'+(s.pending===0?'<span class="badge b-success">Al dia</span>':'<span class="badge b-warning">'+s.pending+' pend.</span>')+'</td><td><span class="badge '+bc+'">'+(s.status||'Sin datos')+'</span></td><td style="font-size:12px;color:var(--info)">'+(s.parentPhone||'—')+'</td></tr>';
+    return '<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><span class="badge b-gray">'+s.section+'</span></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill '+getBar(s.avg)+'" style="width:'+(s.avg?s.avg*5:0)+'%"></div></div><b>'+(s.avg??'—')+'</b></div></td><td>'+(s.att??'—')+'%</td><td>'+(s.pending===0?'<span class="badge b-success">Al dia</span>':'<span class="badge b-warning">'+s.pending+' pend.</span>')+'</td><td><span class="badge '+bc+'">'+(s.status||'Sin datos')+'</span></td><td style="font-size:12px;color:var(--info)">'+(s.parentPhone||'—')+'</td></tr>';
   }).join('');
 }
 
@@ -403,9 +403,9 @@ function buildDirectorio(){
 
 function buildProfile(){
   const isT=CU.role==='teacher';
-  document.getElementById('profile-hero-section').innerHTML='<div class="profile-hero"><div class="ph-av '+(isT?'av-t':'av-s')+'">'+CU.initials+'</div><div style="position:relative;z-index:1"><div class="ph-name">'+CU.name+'</div><div class="ph-info">'+CU.roleLabel+(CU.group?' - '+CU.group:'')+'</div><div class="ph-badges"><span class="ph-badge"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'+CU.email+'</span><span class="ph-badge"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>'+CFG.name+'</span></div></div></div>';
-  const firstStudent=allStudents.find(s=>s.id===1)||{};
-  const fields=isT?[['Nombre completo',CU.name],['Correo',CU.email],['Materia','Programacion y bases de datos'],['Grupos',new Set(allStudents.map(s=>s.group)).size+' secciones'],['Telefono',CU.phone||'No registrado'],['Ingreso','2026']]:[['Nombre completo',CU.name],['Correo',CU.email],['Matricula','MAT-0001'],['Grupo',CU.group||firstStudent.group||'Sin grupo'],['Tutor','Docente asignado'],['Ciclo','2026-II']];
+  const profileSection=CU.section||(CU.role==='student'?allStudents[0]?.section:'')||'';
+  document.getElementById('profile-hero-section').innerHTML='<div class="profile-hero"><div class="ph-av '+(isT?'av-t':'av-s')+'">'+CU.initials+'</div><div style="position:relative;z-index:1"><div class="ph-name">'+CU.name+'</div><div class="ph-info">'+CU.roleLabel+(profileSection?' - '+profileSection:'')+'</div><div class="ph-badges"><span class="ph-badge"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>'+CU.email+'</span><span class="ph-badge"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>'+CFG.name+'</span></div></div></div>';
+  const fields=isT?[['Nombre completo',CU.name],['Correo',CU.email],['Curso','Curso asignado'],['Secciones',new Set(allStudents.map(s=>s.sectionCode)).size],['Telefono',CU.phone||'No registrado'],['Ingreso','2026']]:[['Nombre completo',CU.name],['Correo',CU.email],['Matricula','MAT-0001'],['Sección',profileSection||'Sin sección'],['Tutor','Docente asignado'],['Ciclo','2026-II']];
   document.getElementById('profile-info-section').innerHTML=fields.map(([l,v])=>'<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)"><span style="font-size:13px;color:var(--muted)">'+l+'</span><span style="font-size:13px;font-weight:600;color:var(--navy)">'+v+'</span></div>').join('');
   const notifs=[['Nuevos avisos',true],['Calificaciones publicadas',true],['Recordatorio de tareas',true],['Mensajes',false]];
   document.getElementById('notif-settings').innerHTML=notifs.map(([l,on])=>'<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:13px;color:var(--navy)">'+l+'</span><button type="button" role="switch" aria-label="'+l+'" aria-checked="'+on+'" class="toggle '+(on?'on':'off')+'" onclick="this.classList.toggle(\'on\');this.classList.toggle(\'off\');this.setAttribute(\'aria-checked\',String(this.classList.contains(\'on\')))"><span class="t-knob" aria-hidden="true"></span></button></div>').join('');
@@ -415,8 +415,8 @@ function buildProfile(){
 function saveProfile(){const n=document.getElementById('edit-name').value.trim();const e=document.getElementById('edit-email').value.trim();if(n)CU.name=n;if(e)CU.email=e;buildProfile();buildSidebar();closeModal('modal-edit-profile');}
 
 function populateSelects(){
-  const opts=CFG.groups.map(g=>'<option value="'+g+'">'+g+'</option>').join('');
-  ['grades-group-filter','students-group-filter','task-group-sel','new-student-group','ag-group'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const base=el.options[0]&&el.options[0].value===''?el.options[0].outerHTML:'';el.innerHTML=base+opts;});
+  const opts=CFG.academicSections.map(section=>'<option value="'+section.value+'">'+section.label+'</option>').join('');
+  ['grades-section-filter','students-section-filter','task-section-sel','new-student-section','ag-section'].forEach(id=>{const el=document.getElementById(id);if(!el)return;const base=el.options[0]&&el.options[0].value===''?el.options[0].outerHTML:'';el.innerHTML=base+opts;});
   renderMatriculaAlumnoOptions();
 }
 

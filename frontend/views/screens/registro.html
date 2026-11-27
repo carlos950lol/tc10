@@ -110,8 +110,8 @@
                 <label class="form-label" for="ci-reg-nivel">Nivel</label>
                 <select class="form-input" id="ci-reg-nivel" onchange="updateGradoOptions('ci-reg-nivel','ci-reg-grado')">
                   <option value="">Seleccionar...</option>
-                  <option value="Primaria">Primaria</option>
-                  <option value="Secundaria">Secundaria</option>
+                  <option value="primaria">Primaria</option>
+                  <option value="secundaria">Secundaria</option>
                 </select>
               </div>
               <div class="form-group" style="margin:0">
@@ -126,6 +126,7 @@
                   <option value="">Seleccionar...</option>
                   <option value="A">A</option>
                   <option value="B">B</option>
+                  <option value="C">C</option>
                 </select>
               </div>
             </div>
@@ -145,20 +146,40 @@
             </div>
 
             <div id="ci-reg-docente-wrap" style="display:none;flex-direction:column;gap:10px">
-              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Asignaciones del docente</div>
+              <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Curso del docente</div>
               <div class="form-group" style="margin:0">
-                <label class="form-label" for="ci-reg-cursos">Cursos registrados (puedes elegir varios)</label>
-                <select id="ci-reg-cursos" class="form-input" multiple size="4"></select>
+                <label class="form-label" for="ci-reg-cursos">Curso único que dictará</label>
+                <select id="ci-reg-cursos" class="form-input"></select>
+                <small class="page-sub">Podrás asignarle otros grados y periodos para este mismo curso desde Gestión académica.</small>
               </div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+              <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
                 <div class="form-group" style="margin:0">
-                  <label class="form-label" for="ci-reg-grupo">Grado</label>
-                  <select id="ci-reg-grupo" class="form-input"></select>
+                  <label class="form-label" for="ci-reg-docente-nivel">Nivel</label>
+                  <select id="ci-reg-docente-nivel" class="form-input" onchange="updateGradoOptions('ci-reg-docente-nivel','ci-reg-docente-grado')">
+                    <option value="">Seleccionar...</option>
+                    <option value="primaria">Primaria</option>
+                    <option value="secundaria">Secundaria</option>
+                  </select>
                 </div>
                 <div class="form-group" style="margin:0">
-                  <label class="form-label" for="ci-reg-periodo">Periodo académico</label>
-                  <select id="ci-reg-periodo" class="form-input"></select>
+                  <label class="form-label" for="ci-reg-docente-grado">Grado</label>
+                  <select id="ci-reg-docente-grado" class="form-input" disabled>
+                    <option value="">Selecciona nivel</option>
+                  </select>
                 </div>
+                <div class="form-group" style="margin:0">
+                  <label class="form-label" for="ci-reg-docente-seccion">Sección</label>
+                  <select id="ci-reg-docente-seccion" class="form-input">
+                    <option value="">Seleccionar...</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group" style="margin:0">
+                <label class="form-label" for="ci-reg-periodo">Periodo académico</label>
+                <select id="ci-reg-periodo" class="form-input"></select>
               </div>
             </div>
 
@@ -267,7 +288,11 @@
         <h3>Asignar docente</h3>
         <div class="form-group"><label class="form-label" for="assignment-teacher">Docente</label><select id="assignment-teacher" class="form-input"></select></div>
         <div class="form-group"><label class="form-label" for="assignment-course">Curso</label><select id="assignment-course" class="form-input"></select></div>
-        <div class="form-group"><label class="form-label" for="assignment-group">Grado</label><select id="assignment-group" class="form-input"></select></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+          <div class="form-group"><label class="form-label" for="assignment-level">Nivel</label><select id="assignment-level" class="form-input" onchange="updateGradoOptions('assignment-level','assignment-grade')"><option value="">Seleccionar...</option><option value="primaria">Primaria</option><option value="secundaria">Secundaria</option></select></div>
+          <div class="form-group"><label class="form-label" for="assignment-grade">Grado</label><select id="assignment-grade" class="form-input" disabled><option value="">Selecciona nivel</option></select></div>
+          <div class="form-group"><label class="form-label" for="assignment-section">Sección</label><select id="assignment-section" class="form-input"><option value="">Seleccionar...</option><option>A</option><option>B</option><option>C</option></select></div>
+        </div>
         <div class="form-group"><label class="form-label" for="assignment-period">Periodo</label><select id="assignment-period" class="form-input"></select></div>
         <button class="btn btn-primary" type="button" onclick="createAcademicAssignment()">Guardar asignación</button>
         <div id="assignment-list" style="margin-top:10px"></div>

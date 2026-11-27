@@ -8,14 +8,14 @@
       </div>
       <div class="filter-bar teacher-only">
         <input type="date" class="filter-select" id="att-date" aria-label="Fecha de asistencia" style="width:155px" onchange="loadAttGroup()">
-        <select class="filter-select" id="att-group-filter" aria-label="Seleccionar curso y grado para registrar asistencia" onchange="loadAttGroup()"><option value="">Seleccionar curso y grado</option></select>
+        <select class="filter-select" id="att-assignment-filter" aria-label="Seleccionar curso y sección para registrar asistencia" onchange="loadAttGroup()"><option value="">Seleccionar curso y sección</option></select>
       </div>
       <div id="att-teacher-view">
         <div class="card">
           <div class="card-header"><h2 id="att-card-title"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><polyline points="3 6 4 7 6 5"/><polyline points="3 12 4 13 6 11"/><polyline points="3 18 4 19 6 17"/></svg>Lista de asistencia</h2></div>
           <div class="table-wrap">
             <table><thead><tr><th>#</th><th>Alumno</th><th>Asistencia</th><th>% del mes</th><th>Faltas</th><th>Estado</th></tr></thead>
-            <tbody id="att-tbody"><tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h3>Selecciona un grupo</h3><p>Elige el grupo para registrar asistencia.</p></div></td></tr></tbody>
+            <tbody id="att-tbody"><tr><td colspan="6"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><h3>Selecciona una asignación</h3><p>Elige curso y sección para registrar asistencia.</p></div></td></tr></tbody>
             </table>
           </div>
         </div>

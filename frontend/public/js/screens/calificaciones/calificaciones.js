@@ -6,14 +6,14 @@ function getBar(avg){if(!avg)return'bf-poor';if(avg>=18)return'bf-ex';if(avg>=16
 function buildGradesHeader(){
   const isT=CU.role==='teacher';
   document.getElementById('grades-thead').innerHTML=isT
-    ?'<tr><th>#</th><th>Alumno</th><th>Grupo</th><th>Examen 1</th><th>Examen 2</th><th>Tareas</th><th>Proyecto</th><th>Promedio</th><th>Estado</th><th></th></tr>'
+    ?'<tr><th>#</th><th>Alumno</th><th>Sección</th><th>Examen 1</th><th>Examen 2</th><th>Tareas</th><th>Proyecto</th><th>Promedio</th><th>Estado</th><th></th></tr>'
     :'<tr><th>Materia</th><th>Maestro</th><th>Examen 1</th><th>Examen 2</th><th>Tareas</th><th>Proyecto</th><th>Promedio</th><th>Estado</th></tr>';
 }
 function filterGrades(q){
   const search=(q||document.getElementById('grades-search').value).toLowerCase();
-  const gf=document.getElementById('grades-group-filter').value;
+  const gf=document.getElementById('grades-section-filter').value;
   const sf=document.getElementById('grades-status-filter').value;
-  const f=allGrades.filter(s=>{const avg=CU.role==='teacher'?(s.avgSaved==null?null:Number(s.avgSaved)):calcAvg(s);const st=getStatus(avg).toLowerCase().replace(' ','');return(!search||s.name.toLowerCase().includes(search))&&(!gf||s.group===gf)&&(!sf||st.includes(sf));});
+  const f=allGrades.filter(s=>{const avg=CU.role==='teacher'?(s.avgSaved==null?null:Number(s.avgSaved)):calcAvg(s);const st=getStatus(avg).toLowerCase().replace(' ','');return(!search||s.name.toLowerCase().includes(search))&&(!gf||s.sectionCode===gf)&&(!sf||st.includes(sf));});
   renderGrades(f);
 }
 function av(s){return'<div style="width:26px;height:26px;border-radius:50%;background:var(--accent-light);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--accent)">'+s+'</div>';}
@@ -22,7 +22,7 @@ function renderGrades(data){
   if(!data.length){tb.innerHTML='<tr><td colspan="'+cols+'"><div class="empty-state"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg><h3>Sin datos</h3><p>Ajusta los filtros o registra datos.</p></div></td></tr>';return;}
   if(isT){
     tb.innerHTML=data.map((s,i)=>{const avg=s.avgSaved==null?null:Number(s.avgSaved);const avgS=avg!=null?avg.toString():'—';
-      return '<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><span class="badge b-gray">'+s.group+'</span></td><td><input class="grade-input" aria-label="Examen 1 de '+s.name+'" value="'+(s.e1!=null?s.e1:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'e1\',this.value)"></td><td><input class="grade-input" aria-label="Examen 2 de '+s.name+'" value="'+(s.e2!=null?s.e2:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'e2\',this.value)"></td><td><input class="grade-input" aria-label="Tareas de '+s.name+'" value="'+(s.tarea!=null?s.tarea:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'tarea\',this.value)"></td><td><input class="grade-input" aria-label="Proyecto de '+s.name+'" value="'+(s.proyecto!=null?s.proyecto:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'proyecto\',this.value)"></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill '+getBar(avg)+'" style="width:'+(avg?avg*5:0)+'%"></div></div><span class="td-bold">'+avgS+'</span></div></td><td><span class="badge '+getBadge(avg)+'">'+getStatus(avg)+'</span></td><td><button class=\"btn btn-sm\" onclick=\"openEditGrade('+s.id+')\" title=\"Modificar notas\" aria-label=\"Modificar notas de '+s.name+'\" style=\"padding:5px 8px\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z\"/></svg></button></td></tr>';
+      return '<tr><td>'+(i+1)+'</td><td><div style="display:flex;align-items:center;gap:8px">'+av(s.initials)+'<span class="td-bold">'+s.name+'</span></div></td><td><span class="badge b-gray">'+s.section+'</span></td><td><input class="grade-input" aria-label="Examen 1 de '+s.name+'" value="'+(s.e1!=null?s.e1:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'e1\',this.value)"></td><td><input class="grade-input" aria-label="Examen 2 de '+s.name+'" value="'+(s.e2!=null?s.e2:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'e2\',this.value)"></td><td><input class="grade-input" aria-label="Tareas de '+s.name+'" value="'+(s.tarea!=null?s.tarea:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'tarea\',this.value)"></td><td><input class="grade-input" aria-label="Proyecto de '+s.name+'" value="'+(s.proyecto!=null?s.proyecto:'')+'" type="number" min="0" max="20" step="0.5" onchange="updGrade('+s.id+',\'proyecto\',this.value)"></td><td><div class="bar-wrap"><div class="bar-track"><div class="bar-fill '+getBar(avg)+'" style="width:'+(avg?avg*5:0)+'%"></div></div><span class="td-bold">'+avgS+'</span></div></td><td><span class="badge '+getBadge(avg)+'">'+getStatus(avg)+'</span></td><td><button class=\"btn btn-sm\" onclick=\"openEditGrade('+s.id+')\" title=\"Modificar notas\" aria-label=\"Modificar notas de '+s.name+'\" style=\"padding:5px 8px\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z\"/></svg></button></td></tr>';
     }).join('');
   } else {
     function dv(v){return v!=null&&v!==''?'<span class="gv">'+v+'</span>':'<span class="gv gv-dash">—</span>';}
@@ -33,7 +33,7 @@ function renderGrades(data){
 }
 function updGrade(id,f,v){const s=allGrades.find(x=>x.id===id);if(s)s[f]=v===''?null:parseFloat(v);}
 function saveGrades(e){const btn=e.currentTarget;btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> Guardado';btn.style.background='var(--success)';setTimeout(()=>{btn.innerHTML='<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Guardar';btn.style.background='';},2000);}
-function exportGrades(){if(!allGrades.length){alert('Sin calificaciones para exportar.');return;}const rows=[['Nombre','Grupo','E1','E2','Tareas','Proyecto','Promedio','Estado']];allGrades.forEach(s=>{const avg=calcAvg(s);rows.push([s.name,s.group,s.e1??'',s.e2??'',s.tarea??'',s.proyecto??'',avg?avg.toFixed(1):'',getStatus(avg)]);});const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download='calificaciones.csv';a.click();}
+function exportGrades(){if(!allGrades.length){alert('Sin calificaciones para exportar.');return;}const rows=[['Nombre','Sección','E1','E2','Tareas','Proyecto','Promedio','Estado']];allGrades.forEach(s=>{const avg=calcAvg(s);rows.push([s.name,s.section,s.e1??'',s.e2??'',s.tarea??'',s.proyecto??'',avg?avg.toFixed(1):'',getStatus(avg)]);});const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));a.download='calificaciones.csv';a.click();}
 
 // ══════════════════════
 // CALIFICACIONES — AGREGAR ALUMNO
@@ -61,21 +61,25 @@ function previewAvg(){
 
 function saveGradeStudent(){
   const name=document.getElementById('ag-name').value.trim();
-  const group=document.getElementById('ag-group').value;
+  const sectionCode=document.getElementById('ag-section').value;
   if(!name){document.getElementById('ag-name').focus();document.getElementById('ag-name').style.borderColor='var(--danger)';return;}
-  if(!group){document.getElementById('ag-group').focus();document.getElementById('ag-group').style.borderColor='var(--danger)';return;}
+  if(!sectionCode){document.getElementById('ag-section').focus();document.getElementById('ag-section').style.borderColor='var(--danger)';return;}
   document.getElementById('ag-name').style.borderColor='';
-  document.getElementById('ag-group').style.borderColor='';
+  document.getElementById('ag-section').style.borderColor='';
   const e1=document.getElementById('ag-e1').value!==''?parseFloat(document.getElementById('ag-e1').value):null;
   const e2=document.getElementById('ag-e2').value!==''?parseFloat(document.getElementById('ag-e2').value):null;
   const tarea=document.getElementById('ag-tarea').value!==''?parseFloat(document.getElementById('ag-tarea').value):null;
   const proyecto=document.getElementById('ag-proyecto').value!==''?parseFloat(document.getElementById('ag-proyecto').value):null;
   const initials=name.split(' ').map(w=>w[0]&&w[0].toUpperCase()||'').join('').slice(0,2)||'XX';
-  allGrades.push({id:gradeStudentId++,name,group,initials,e1,e2,tarea,proyecto});
+  const [nivel,grado,seccion]=sectionCode.split(':');
+  allGrades.push({
+    id:gradeStudentId++,name,sectionCode,
+    section:formatAcademicSection(nivel,grado,seccion),initials,e1,e2,tarea,proyecto
+  });
   saveDataStore();
   // Reset form
   ['ag-name','ag-e1','ag-e2','ag-tarea','ag-proyecto'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('ag-group').value='';
+  document.getElementById('ag-section').value='';
   document.getElementById('ag-preview').style.display='none';
   closeModal('modal-add-grade-student');
   // Refresh table
@@ -111,7 +115,7 @@ function openEditGrade(id){
   editingGradeId = id;
   document.getElementById('eg-avatar').textContent = s.initials;
   document.getElementById('eg-name').textContent = s.name;
-  document.getElementById('eg-group').textContent = 'Grupo ' + s.group;
+  document.getElementById('eg-section').textContent = 'Sección ' + s.section;
   document.getElementById('eg-e1').value = s.e1 != null ? s.e1 : '';
   document.getElementById('eg-e2').value = s.e2 != null ? s.e2 : '';
   document.getElementById('eg-tarea').value = s.tarea != null ? s.tarea : '';
@@ -165,7 +169,8 @@ async function loadGradesAssignment(){
         const name=`${row.nombre} ${row.apellido}`.trim();
         students.set(row.idAlumno,{
           id:row.idAlumno,name,initials:name.split(/\s+/).map(part=>part[0]||'').join('').slice(0,2).toUpperCase(),
-          group:row.grupo,e1:null,e2:null,tarea:null,proyecto:null,
+          section:formatAcademicSection(row.nivel,row.grado,row.seccion),
+          sectionCode:`${row.nivel}:${row.grado}:${row.seccion}`,e1:null,e2:null,tarea:null,proyecto:null,
           avgSaved:row.promedio==null?null:Number(row.promedio)
         });
       }

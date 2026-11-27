@@ -11,9 +11,9 @@
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg> Solo lectura — estas son tus calificaciones registradas por tu maestro.
       </div>
       <div class="filter-bar teacher-only">
-        <select class="filter-select" id="grades-assignment-filter" aria-label="Seleccionar curso y grado" onchange="loadGradesAssignment()"><option value="">Seleccionar curso y grado</option></select>
+        <select class="filter-select" id="grades-assignment-filter" aria-label="Seleccionar curso y sección" onchange="loadGradesAssignment()"><option value="">Seleccionar curso y sección</option></select>
         <div class="search-wrap"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input class="search-input" type="text" placeholder="Buscar alumno..." aria-label="Buscar alumnos por nombre" oninput="filterGrades(this.value)" id="grades-search"></div>
-        <select class="filter-select" id="grades-group-filter" aria-label="Filtrar calificaciones por grupo" onchange="filterGrades('')"><option value="">Todos los grupos</option></select>
+        <select class="filter-select" id="grades-section-filter" aria-label="Filtrar calificaciones por sección" onchange="filterGrades('')"><option value="">Todas las secciones</option></select>
         <select class="filter-select" id="grades-status-filter" aria-label="Filtrar calificaciones por estado" onchange="filterGrades('')">
           <option value="">Todos</option><option value="excelente">Excelente</option><option value="bien">Bien</option><option value="regular">Regular</option><option value="riesgo">En riesgo</option>
         </select>

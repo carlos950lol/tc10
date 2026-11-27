@@ -32,11 +32,11 @@ const SESSION_TTL = 8 * 60 * 60 * 1000;
 const sessions = new Map();
 
 const tablas = new Set([
-  'alumno', 'docente', 'curso', 'seccion', 'matricula', 'calificacion',
+  'alumno', 'docente', 'curso', 'matricula', 'calificacion',
   'asistencia', 'reclamo', 'respuesta_reclamo', 'pago', 'constancia', 'usuario', 'tarea'
 ]);
 const claves = {
-  alumno: 'idAlumno', docente: 'idDocente', curso: 'nrcCurso', seccion: 'idSeccion',
+  alumno: 'idAlumno', docente: 'idDocente', curso: 'nrcCurso',
   matricula: 'idMatricula', calificacion: 'idCalificacion', asistencia: 'idAsistencia',
   reclamo: 'idReclamo', respuesta_reclamo: 'idRespuesta', pago: 'idPago', constancia: 'idConstancia',
   usuario: 'idUsuario', tarea: 'idTarea'
@@ -319,18 +319,29 @@ async function request(req, res) {
             return json(res, 400, {error: 'Selecciona al menos un curso, grado y periodo para el docente.'});
           }
           const seenAssignments = new Set();
+          let teacherCourseId = null;
           for (const assignment of data.asignaciones) {
-            const group = String(assignment.grupo || '');
+            const nivel = String(assignment.nivel || '');
+            const grado = Number(assignment.grado);
+            const seccion = String(assignment.seccion || '');
             const period = String(assignment.periodoAcademico || '');
             const courseId = Number(assignment.nrcCurso);
-            if (!Number.isInteger(courseId) || !/^[AB][1-6]$/.test(group) || !/^\d{4}-(I|II)$/.test(period)) {
+            const maxGrado = nivel === 'primaria' ? 6 : nivel === 'secundaria' ? 5 : 0;
+            if (!Number.isInteger(courseId) || !maxGrado ||
+                !Number.isInteger(grado) || grado < 1 || grado > maxGrado ||
+                !['A', 'B', 'C'].includes(seccion) || !/^\d{4}-(I|II)$/.test(period)) {
               await connection.rollback();
               return json(res, 400, {error: 'Una de las asignaciones del docente no es válida.'});
             }
-            const assignmentKey = `${courseId}:${group}:${period}`;
+            if (teacherCourseId !== null && teacherCourseId !== courseId) {
+              await connection.rollback();
+              return json(res, 400, {error: 'Cada docente solo puede dictar un curso.'});
+            }
+            teacherCourseId = courseId;
+            const assignmentKey = `${courseId}:${nivel}:${grado}:${seccion}:${period}`;
             if (seenAssignments.has(assignmentKey)) {
               await connection.rollback();
-              return json(res, 400, {error: 'No repitas la misma asignación de curso, grado y periodo.'});
+              return json(res, 400, {error: 'No repitas la misma asignación de curso, sección y periodo.'});
             }
             seenAssignments.add(assignmentKey);
             const [existingReferences] = await connection.query(
@@ -345,8 +356,8 @@ async function request(req, res) {
             }
           }
           const [teacher] = await connection.query(
-            'INSERT INTO docente (nombre, apellido, correo, telefono, estado) VALUES (?, ?, ?, ?, ?)',
-            [name, surname, email, data.telefono || null, 'activo']
+            'INSERT INTO docente (nombre, apellido, correo, telefono, nrcCurso, estado) VALUES (?, ?, ?, ?, ?, ?)',
+            [name, surname, email, data.telefono || null, teacherCourseId, 'activo']
           );
           idDocente = teacher.insertId;
         }
@@ -359,9 +370,12 @@ async function request(req, res) {
         if (role === 'teacher') {
           for (const assignment of data.asignaciones) {
             await connection.query(
-              `INSERT INTO asignacion_docente (idDocente, nrcCurso, grupo, periodoAcademico)
-               VALUES (?, ?, ?, ?)`,
-              [idDocente, Number(assignment.nrcCurso), assignment.grupo, assignment.periodoAcademico]
+              `INSERT INTO asignacion_docente (idDocente, nrcCurso, nivel, grado, seccion, periodoAcademico)
+               VALUES (?, ?, ?, ?, ?, ?)`,
+              [
+                idDocente, Number(assignment.nrcCurso), assignment.nivel,
+                Number(assignment.grado), assignment.seccion, assignment.periodoAcademico
+              ]
             );
           }
         }
@@ -369,6 +383,10 @@ async function request(req, res) {
         return json(res, 201, {id: account.insertId, mensaje: 'Personal registrado. Debe cambiar la contraseña al iniciar sesión.'});
       } catch (error) {
         await connection.rollback();
+        if (error.code === 'ER_DUP_ENTRY' &&
+            String(error.message).includes('uq_asignacion_oferta')) {
+          return json(res, 409, {error: 'Ya existe un docente para ese curso, grado y periodo.'});
+        }
         if (error.code === 'ER_DUP_ENTRY') return json(res, 409, {error: 'El correo ya está registrado.'});
         throw error;
       } finally {
@@ -377,12 +395,39 @@ async function request(req, res) {
     }
     if (url.pathname === '/api/curso' && req.method === 'GET') {
       if (!['jefe', 'teacher'].includes(session.role)) return json(res, 403, {error: 'Tu rol no puede consultar cursos.'});
+      const requestedLevel = url.searchParams.get('nivel');
+      const requestedGrade = url.searchParams.get('grado');
+      const requestedSection = url.searchParams.get('seccion');
+      const requestedPeriod = url.searchParams.get('periodo');
+      if (requestedLevel !== null || requestedGrade !== null ||
+          requestedSection !== null || requestedPeriod !== null) {
+        if (session.role !== 'jefe') {
+          return json(res, 403, {error: 'Solo el jefe puede consultar cursos disponibles para matrícula.'});
+        }
+        const numericGrade = Number(requestedGrade);
+        const maxGrade = requestedLevel === 'primaria' ? 6 : requestedLevel === 'secundaria' ? 5 : 0;
+        if (!maxGrade || !Number.isInteger(numericGrade) ||
+            numericGrade < 1 || numericGrade > maxGrade ||
+            !['A', 'B', 'C'].includes(requestedSection || '') ||
+            !/^\d{4}-(I|II)$/.test(requestedPeriod || '')) {
+          return json(res, 400, {error: 'Selecciona nivel, grado, sección y periodo académicos válidos.'});
+        }
+        const [rows] = await pool.query(
+          `SELECT c.nrcCurso, c.nombreCurso
+           FROM asignacion_docente ad
+           INNER JOIN curso c ON c.nrcCurso = ad.nrcCurso
+           WHERE ad.nivel = ? AND ad.grado = ? AND ad.seccion = ?
+             AND ad.periodoAcademico = ? AND ad.estado = 'activa'
+           ORDER BY c.nombreCurso`,
+          [requestedLevel, numericGrade, requestedSection, requestedPeriod]
+        );
+        return json(res, 200, rows);
+      }
       const [rows] = session.role === 'teacher'
         ? await pool.query(
-          `SELECT DISTINCT c.* FROM curso c
-           INNER JOIN asignacion_docente ad ON ad.nrcCurso = c.nrcCurso
-           WHERE ad.idDocente = ? AND ad.estado = 'activa'
-           ORDER BY c.nombreCurso`,
+          `SELECT c.* FROM docente d
+           INNER JOIN curso c ON c.nrcCurso = d.nrcCurso
+           WHERE d.idDocente = ?`,
           [session.idDocente]
         )
         : await pool.query('SELECT * FROM curso ORDER BY nombreCurso');
@@ -391,8 +436,11 @@ async function request(req, res) {
     if (url.pathname === '/api/docente' && req.method === 'GET') {
       if (session.role !== 'jefe') return json(res, 403, {error: 'Solo el jefe académico puede consultar docentes.'});
       const [rows] = await pool.query(
-        `SELECT idDocente, nombre, apellido, correo, estado
-         FROM docente ORDER BY apellido, nombre`
+        `SELECT d.idDocente, d.nombre, d.apellido, d.correo, d.nrcCurso,
+                d.estado, c.nombreCurso
+         FROM docente d
+         INNER JOIN curso c ON c.nrcCurso = d.nrcCurso
+         ORDER BY d.apellido, d.nombre`
       );
       return json(res, 200, rows);
     }
@@ -464,21 +512,35 @@ async function request(req, res) {
       const data = await body(req);
       const idDocente = Number(data.idDocente);
       const nrcCurso = Number(data.nrcCurso);
-      const grupo = String(data.grupo || '').trim();
+      const nivel = String(data.nivel || '').trim();
+      const grado = Number(data.grado);
+      const seccion = String(data.seccion || '').trim();
       const periodo = String(data.periodoAcademico || '').trim();
+      const maxGrado = nivel === 'primaria' ? 6 : nivel === 'secundaria' ? 5 : 0;
       if (!Number.isInteger(idDocente) || !Number.isInteger(nrcCurso) ||
-          !/^[AB][1-6]$/.test(grupo) || !/^\d{4}-(I|II)$/.test(periodo)) {
+          !maxGrado || !Number.isInteger(grado) || grado < 1 || grado > maxGrado ||
+          !['A', 'B', 'C'].includes(seccion) || !/^\d{4}-(I|II)$/.test(periodo)) {
         return json(res, 400, {error: 'Selecciona un docente, curso, grado y periodo académico válidos.'});
+      }
+      const [teachers] = await pool.query(
+        'SELECT nrcCurso FROM docente WHERE idDocente = ?',
+        [idDocente]
+      );
+      if (!teachers.length) return json(res, 404, {error: 'El docente seleccionado no existe.'});
+      if (Number(teachers[0].nrcCurso) !== nrcCurso) {
+        return json(res, 400, {error: 'El docente solo puede dictar el curso que tiene asignado.'});
       }
       try {
         const [result] = await pool.query(
-          `INSERT INTO asignacion_docente (idDocente, nrcCurso, grupo, periodoAcademico)
-           VALUES (?, ?, ?, ?)`,
-          [idDocente, nrcCurso, grupo, periodo]
+          `INSERT INTO asignacion_docente (idDocente, nrcCurso, nivel, grado, seccion, periodoAcademico)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [idDocente, nrcCurso, nivel, grado, seccion, periodo]
         );
         return json(res, 201, {id: result.insertId, mensaje: 'Asignación registrada.'});
       } catch (error) {
-        if (error.code === 'ER_DUP_ENTRY') return json(res, 409, {error: 'La asignación ya existe.'});
+        if (error.code === 'ER_DUP_ENTRY') {
+          return json(res, 409, {error: 'Ya existe un docente asignado a ese curso, grado y periodo.'});
+        }
         if (error.code === 'ER_NO_REFERENCED_ROW_2') return json(res, 400, {error: 'El docente, curso o periodo no existe.'});
         throw error;
       }

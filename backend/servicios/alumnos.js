@@ -18,12 +18,14 @@ async function registrarAlumno(pool, alumno) {
     await connection.beginTransaction();
     const [result] = await connection.query(
       `INSERT INTO alumno
-        (nombre, apellido, grupo, dni, correo, telefono, fechaNacimiento, sexo, procedencia, direccion)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        (nombre, apellido, nivel, grado, seccion, dni, correo, telefono, fechaNacimiento, sexo, procedencia, direccion)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         data.nombre,
         data.apellido,
-        data.grupo,
+        data.nivel,
+        data.grado,
+        data.seccion,
         data.dni,
         data.correo || null,
         data.telefono || null,

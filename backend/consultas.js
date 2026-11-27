@@ -9,6 +9,22 @@ const pool = mysql.createPool({
   connectionLimit: 10,
   charset: 'utf8mb4'
 });
+
+function mismaUbicacion(a, b) {
+  return a.nivel === b.nivel && Number(a.grado) === Number(b.grado) && a.seccion === b.seccion;
+}
+
+function etiquetaSeccion(alumno) {
+  if (!alumno.nivel || !alumno.grado || !alumno.seccion) return 'Sin sección';
+  const nivel = alumno.nivel === 'primaria' ? 'Primaria' : 'Secundaria';
+  return `${nivel} ${alumno.grado}° ${alumno.seccion}`;
+}
+
+function codigoSeccion(alumno) {
+  if (!alumno.nivel || !alumno.grado || !alumno.seccion) return '';
+  return `${alumno.nivel}:${alumno.grado}:${alumno.seccion}`;
+}
+
 async function obtenerDatosDashboard(session = {}) {
   const [alumnosRows] = await pool.query(`
     SELECT a.*,
@@ -43,12 +59,10 @@ async function obtenerDatosDashboard(session = {}) {
   `);
   const [asistenciasRows] = await pool.query('SELECT * FROM asistencia ORDER BY fecha DESC, idAsistencia DESC');
   const [matriculasRows] = await pool.query(`
-    SELECT m.*, a.grupo AS grupoActual, CONCAT(a.nombre, ' ', a.apellido) AS nombreAlumno,
-           s.nombreSeccion, c.nombreCurso
+    SELECT m.*, CONCAT(a.nombre, ' ', a.apellido) AS nombreAlumno, c.nombreCurso
     FROM matricula m
     INNER JOIN alumno a ON a.idAlumno = m.idAlumno
     INNER JOIN curso c ON c.nrcCurso = m.nrcCurso
-    LEFT JOIN seccion s ON s.idSeccion = m.idSeccion
     ORDER BY m.idMatricula DESC
   `);
   const [reclamosRows] = await pool.query(`
@@ -64,7 +78,7 @@ async function obtenerDatosDashboard(session = {}) {
   let teacherAssignments = [];
   if (session.role === 'teacher') {
     const [assignments] = await pool.query(
-      `SELECT idAsignacion, nrcCurso, grupo, periodoAcademico
+      `SELECT idAsignacion, nrcCurso, nivel, grado, seccion, periodoAcademico
        FROM asignacion_docente
        WHERE idDocente = ? AND estado = 'activa'`,
       [session.idDocente]
@@ -76,7 +90,7 @@ async function obtenerDatosDashboard(session = {}) {
         const student = alumnosRows.find(item => item.idAlumno === enrollment.idAlumno);
         if (enrollment.nrcCurso === assignment.nrcCurso &&
             enrollment.periodoAcademico === assignment.periodoAcademico &&
-            enrollment.estado === 'activa' && enrollment.grupo === assignment.grupo && student) {
+            enrollment.estado === 'activa' && mismaUbicacion(enrollment, assignment) && student) {
           assignedStudentIds.add(student.idAlumno);
         }
       });
@@ -89,7 +103,7 @@ async function obtenerDatosDashboard(session = {}) {
         enrollment.idAlumno === item.idAlumno &&
         enrollment.nrcCurso === assignment.nrcCurso &&
         enrollment.periodoAcademico === assignment.periodoAcademico &&
-        enrollment.grupo === assignment.grupo
+        mismaUbicacion(enrollment, assignment)
       )
     );
     alumnos = alumnosRows.filter(student => assignedStudentIds.has(student.idAlumno));
@@ -99,7 +113,7 @@ async function obtenerDatosDashboard(session = {}) {
       teacherAssignments.some(assignment =>
         assignment.nrcCurso === enrollment.nrcCurso &&
         assignment.periodoAcademico === enrollment.periodoAcademico &&
-        assignment.grupo === enrollment.grupo
+        mismaUbicacion(assignment, enrollment)
       )
     );
     calificaciones = calificacionesRows.filter(belongsToTeacher);
@@ -120,7 +134,6 @@ async function obtenerDatosDashboard(session = {}) {
     matriculas = [];
     reclamos = [];
   }
-  const grupoPorAlumno = new Map(matriculas.map(m => [m.idAlumno, m.nombreSeccion || 'Sin grupo']));
   let tareas = [];
   try { [tareas] = await pool.query('SELECT * FROM tarea ORDER BY fechaEntrega, idTarea'); } catch (error) {
     if (!['ER_NO_SUCH_TABLE', 'ER_BAD_TABLE_ERROR'].includes(error.code)) throw error;
@@ -136,7 +149,9 @@ async function obtenerDatosDashboard(session = {}) {
     return {
       id: alumno.idAlumno, name: `${alumno.nombre} ${alumno.apellido}`,
       initials: `${alumno.nombre[0]}${alumno.apellido[0]}`.toUpperCase(),
-      group: alumno.grupo || grupoPorAlumno.get(alumno.idAlumno) || 'Sin grupo',
+      section: etiquetaSeccion(alumno),
+      sectionCode: codigoSeccion(alumno),
+      nivel: alumno.nivel, grado: alumno.grado, seccion: alumno.seccion,
       e1: notas[0]?.nota ?? null, e2: notas[1]?.nota ?? null,
       tarea: notas[2]?.nota ?? null, proyecto: notas[3]?.nota ?? null
     };
@@ -150,6 +165,9 @@ async function obtenerDatosDashboard(session = {}) {
     const asistencia = Number(alumno.asistencia) || 0;
     return {
       ...gradesTeacher.find(item => item.id === alumno.idAlumno),
+      section: etiquetaSeccion(alumno),
+      sectionCode: codigoSeccion(alumno),
+      nivel: alumno.nivel, grado: alumno.grado, seccion: alumno.seccion,
       avg: promedio, att: asistencia,
       pending: tareas.filter(tarea => tarea.estado === 'pendiente').length,
       status: promedio >= 18 ? 'Excelente' : promedio >= 16 ? 'Bien' : promedio >= 12 ? 'Regular' : 'En riesgo',

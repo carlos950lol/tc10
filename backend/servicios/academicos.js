@@ -1,14 +1,16 @@
+const {cumpleEdadEscolar} = require('../validaciones/alumno');
+
 const ESTADOS_ASISTENCIA = new Set(['presente', 'falta', 'tardanza']);
 
 async function listarAsignaciones(pool, session) {
   const [rows] = await pool.query(
-    `SELECT ad.idAsignacion, ad.idDocente, ad.nrcCurso, ad.grupo,
+    `SELECT ad.idAsignacion, ad.idDocente, ad.nrcCurso, ad.nivel, ad.grado, ad.seccion,
             ad.periodoAcademico, c.nombreCurso
      FROM asignacion_docente ad
      INNER JOIN curso c ON c.nrcCurso = ad.nrcCurso
      WHERE ad.estado = 'activa'
        AND (? = 'jefe' OR ad.idDocente = ?)
-     ORDER BY ad.periodoAcademico DESC, ad.grupo, c.nombreCurso`,
+     ORDER BY ad.periodoAcademico DESC, ad.nivel, ad.grado, ad.seccion, c.nombreCurso`,
     [session.role, session.idDocente || 0]
   );
   return rows;
@@ -16,7 +18,7 @@ async function listarAsignaciones(pool, session) {
 
 async function obtenerListaAsignacion(pool, session, idAsignacion, fecha) {
   const [rows] = await pool.query(
-    `SELECT ad.idAsignacion, ad.nrcCurso, ad.grupo, ad.periodoAcademico,
+    `SELECT ad.idAsignacion, ad.nrcCurso, ad.nivel, ad.grado, ad.seccion, ad.periodoAcademico,
             c.nombreCurso, a.idAlumno, a.nombre, a.apellido,
             COALESCE(asx.estado, '') AS estadoAsistencia
      FROM asignacion_docente ad
@@ -27,7 +29,9 @@ async function obtenerListaAsignacion(pool, session, idAsignacion, fecha) {
       AND m.estado = 'activa'
      INNER JOIN alumno a
        ON a.idAlumno = m.idAlumno
-      AND m.grupo = ad.grupo
+      AND m.nivel = ad.nivel
+      AND m.grado = ad.grado
+      AND m.seccion = ad.seccion
      LEFT JOIN asistencia asx
        ON asx.idAlumno = a.idAlumno
       AND asx.nrcCurso = ad.nrcCurso
@@ -55,7 +59,9 @@ async function obtenerHistorialAsistencia(pool, session, idAsignacion) {
        ON m.idAlumno = asx.idAlumno
       AND m.nrcCurso = ad.nrcCurso
       AND m.periodoAcademico = ad.periodoAcademico
-      AND m.grupo = ad.grupo
+      AND m.nivel = ad.nivel
+      AND m.grado = ad.grado
+      AND m.seccion = ad.seccion
      INNER JOIN alumno a
        ON a.idAlumno = asx.idAlumno
      INNER JOIN curso c ON c.nrcCurso = ad.nrcCurso
@@ -70,7 +76,7 @@ async function obtenerHistorialAsistencia(pool, session, idAsignacion) {
 
 async function obtenerCalificacionesAsignacion(pool, session, idAsignacion) {
   const [rows] = await pool.query(
-    `SELECT m.idAlumno, a.nombre, a.apellido, m.grupo,
+    `SELECT m.idAlumno, a.nombre, a.apellido, m.nivel, m.grado, m.seccion,
             c.nrcCurso, c.nombreCurso, ad.periodoAcademico,
             cal.idCalificacion, cal.tipoEvaluacion, cal.nota,
             p.promedio
@@ -81,7 +87,9 @@ async function obtenerCalificacionesAsignacion(pool, session, idAsignacion) {
       AND m.estado = 'activa'
      INNER JOIN alumno a
        ON a.idAlumno = m.idAlumno
-      AND m.grupo = ad.grupo
+      AND m.nivel = ad.nivel
+      AND m.grado = ad.grado
+      AND m.seccion = ad.seccion
      INNER JOIN curso c ON c.nrcCurso = ad.nrcCurso
      LEFT JOIN calificacion cal
        ON cal.idAlumno = m.idAlumno
@@ -112,7 +120,9 @@ async function verificarAlumnoAsignado(connection, session, assignment, studentI
       AND m.estado = 'activa'
      INNER JOIN alumno a
        ON a.idAlumno = m.idAlumno
-      AND m.grupo = ad.grupo
+      AND m.nivel = ad.nivel
+      AND m.grado = ad.grado
+      AND m.seccion = ad.seccion
      WHERE ad.idAsignacion = ?
        AND ad.idDocente = ?
        AND m.idAlumno = ?
@@ -134,7 +144,7 @@ async function guardarAsistencias(pool, session, data) {
   try {
     await connection.beginTransaction();
     const [assignments] = await connection.query(
-      `SELECT idAsignacion, idDocente, nrcCurso, periodoAcademico
+      `SELECT idAsignacion, idDocente, nrcCurso, nivel, grado, seccion, periodoAcademico
        FROM asignacion_docente
        WHERE idAsignacion = ? AND idDocente = ? AND estado = 'activa'
        FOR UPDATE`,
@@ -197,7 +207,7 @@ async function guardarCalificaciones(pool, session, data) {
   try {
     await connection.beginTransaction();
     const [assignments] = await connection.query(
-      `SELECT idAsignacion, idDocente, nrcCurso, periodoAcademico
+      `SELECT idAsignacion, idDocente, nrcCurso, nivel, grado, seccion, periodoAcademico
        FROM asignacion_docente
        WHERE idAsignacion = ? AND idDocente = ? AND estado = 'activa'
        FOR UPDATE`,
@@ -270,12 +280,16 @@ async function guardarCalificaciones(pool, session, data) {
 
 async function registrarMatricula(pool, data) {
   const studentId = Number(data && data.idAlumno);
-  const group = String(data && data.grupo || '');
+  const nivel = String(data && data.nivel || '');
+  const grado = Number(data && data.grado);
+  const seccion = String(data && data.seccion || '');
   const period = String(data && data.periodoAcademico || '');
   const courses = data && data.cursos;
   const modality = String(data && data.modalidad || 'presencial').trim();
+  const maxGrado = nivel === 'primaria' ? 6 : nivel === 'secundaria' ? 5 : 0;
   if (!Number.isInteger(studentId) || studentId <= 0 ||
-      !/^[AB][1-6]$/.test(group) || !/^\d{4}-(I|II)$/.test(period) ||
+      !maxGrado || !Number.isInteger(grado) || grado < 1 || grado > maxGrado ||
+      !['A', 'B', 'C'].includes(seccion) || !/^\d{4}-(I|II)$/.test(period) ||
       !Array.isArray(courses) || !courses.length || modality.length > 30) {
     return {status: 400, error: 'Selecciona alumno, cursos, grado, modalidad y periodo académico válidos.'};
   }
@@ -289,12 +303,17 @@ async function registrarMatricula(pool, data) {
   try {
     await connection.beginTransaction();
     const [students] = await connection.query(
-      'SELECT idAlumno FROM alumno WHERE idAlumno = ? FOR UPDATE',
+      `SELECT idAlumno, DATE_FORMAT(fechaNacimiento, '%Y-%m-%d') AS fechaNacimiento
+       FROM alumno WHERE idAlumno = ? FOR UPDATE`,
       [studentId]
     );
     if (!students.length) {
       await connection.rollback();
       return {status: 404, error: 'El alumno seleccionado no existe.'};
+    }
+    if (!cumpleEdadEscolar(students[0].fechaNacimiento, nivel, grado)) {
+      await connection.rollback();
+      return {status: 400, error: 'La edad del alumno no corresponde al nivel y grado seleccionados.'};
     }
     const [periods] = await connection.query(
       'SELECT periodoAcademico FROM anio_academico WHERE periodoAcademico = ?',
@@ -313,17 +332,34 @@ async function registrarMatricula(pool, data) {
       await connection.rollback();
       return {status: 400, error: 'Uno o más cursos seleccionados no existen.'};
     }
+    const [availableCourses] = await connection.query(
+      `SELECT nrcCurso FROM asignacion_docente
+       WHERE nrcCurso IN (${courseMarks})
+         AND nivel = ? AND grado = ? AND seccion = ?
+         AND periodoAcademico = ? AND estado = 'activa'`,
+      [...courseIds, nivel, grado, seccion, period]
+    );
+    if (availableCourses.length !== courseIds.length) {
+      await connection.rollback();
+      return {status: 400, error: 'Uno o más cursos no tienen docente asignado para esa sección y periodo.'};
+    }
 
-    await connection.query('UPDATE alumno SET grupo = ? WHERE idAlumno = ?', [group, studentId]);
+    await connection.query(
+      'UPDATE alumno SET nivel = ?, grado = ?, seccion = ? WHERE idAlumno = ?',
+      [nivel, grado, seccion, studentId]
+    );
     const enrollments = [];
     for (const courseId of courseIds) {
       const [result] = await connection.query(
         `INSERT INTO matricula
-           (idAlumno, nrcCurso, fecha, periodoAcademico, grupo, estado, modalidad)
-         VALUES (?, ?, CURRENT_DATE(), ?, ?, 'activa', ?)`,
-        [studentId, courseId, period, group, modality]
+           (idAlumno, nrcCurso, fecha, periodoAcademico, nivel, grado, seccion, estado, modalidad)
+         VALUES (?, ?, CURRENT_DATE(), ?, ?, ?, ?, 'activa', ?)`,
+        [studentId, courseId, period, nivel, grado, seccion, modality]
       );
-      enrollments.push({id: result.insertId, idAlumno: studentId, nrcCurso: courseId, grupo: group, periodoAcademico: period});
+      enrollments.push({
+        id: result.insertId, idAlumno: studentId, nrcCurso: courseId,
+        nivel, grado, seccion, periodoAcademico: period
+      });
     }
     await connection.commit();
     return {matriculas: enrollments};

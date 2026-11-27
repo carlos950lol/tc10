@@ -42,6 +42,14 @@ Estas son pruebas de navegador con Selenium, no pruebas unitarias. Cada caso cre
 
 GitHub Actions ejecuta los casos Selenium en Chrome headless al hacer push o abrir un pull request hacia `main`. Los casos marcados `mysql` se omiten si la base de datos no esta disponible; los casos `local` se ejecutan sin MySQL. El reporte JUnit, las capturas y los logs se descargan desde **Actions > ejecucion > Artifacts > evidencias-selenium**. Actualmente no hay una suite separada de pruebas unitarias.
 
+## Flujo de cursos y matrícula
+
+La ubicacion de cada alumno se registra como nivel, grado y seccion: primaria tiene seis grados y secundaria cinco, cada uno con secciones A, B y C. La edad de referencia va de 6-7 años en primero de primaria a 16-17 años en quinto de secundaria. Un alumno puede matricularse en varios cursos. El catalogo demo contiene Matematicas, Comunicacion, Programacion y Educacion Fisica.
+
+Un curso puede ser impartido por varios docentes en ofertas distintas, pero cada docente queda asociado a un solo curso. Cada oferta (curso, nivel, grado, seccion y periodo) admite un docente. El SQL general conserva intactas las cuatro cuentas demo originales, agrega 120 alumnos, 10 docentes, 2 jefes academicos y 4 registradores, y matricula a 110 de los alumnos nuevos en los cuatro cursos para el periodo `2026-II`. Los otros 10 alumnos nuevos quedan sin matricula.
+
+Las cuentas nuevas usan la contraseña temporal `Temporal#2026!` y deben cambiarla al iniciar sesion. Los correos se forman con la primera letra del nombre y el apellido, seguidos del dominio correspondiente: `@academiadecam.edu.pe` para alumnos y `@acadecam.edu.pe` para personal.
+
 ## Pruebas de carga con JMeter
 
 El plan `jmeter/tc10-load-test.jmx` verifica la pagina principal, el estado de salud, el inicio de sesion y una consulta autenticada. El workflow de GitHub Actions ejecuta una carga acotada por defecto (5 usuarios, ramp-up de 5 segundos y 2 iteraciones); al iniciarlo manualmente se pueden cambiar esos valores dentro de los limites del formulario. El reporte HTML, los resultados JTL y los logs se descargan desde **Actions > ejecucion > Artifacts > reporte-jmeter**.

@@ -21,15 +21,15 @@ async function loadDataStore(){
     const response=await fetch(CFG.apiUrl+'/api/dashboard');
     if(!response.ok)throw new Error('Respuesta API '+response.status);
     const data=await response.json();
-    allStudents=(data.students||[]).map(student=>({...student,group:student.group||'Sin grupo'}));
+    allStudents=(data.students||[]).map(student=>({...student,section:student.section||'Sin sección'}));
     allGrades=CU&&CU.role==='student'?(data.gradesStudent||[]):(data.gradesTeacher||[]);
     allTasks=(data.tasks||[]).map(t=>({
       id:t.idTarea,title:t.titulo,subject:t.materia||'General',type:t.tipo||'Tarea',
       dueDate:t.fechaEntrega,status:t.estado==='atrasada'?'late':t.estado==='entregada'?'done':'pending',color:t.color
     }));
-    allMatriculas=(data.matriculas||[]).map(m=>({id:m.idMatricula,alumnoId:m.idAlumno,nro:'MAT-'+String(m.idMatricula).padStart(4,'0'),nombre:m.nombreAlumno,grupo:m.grupo||'Sin grupo',seccion:m.nombreSeccion||m.grupo||'Sin grupo',curso:m.nombreCurso,nrcCurso:m.nrcCurso,anio:m.periodoAcademico,fecha:m.fecha,estado:m.estado}));
+    allMatriculas=(data.matriculas||[]).map(m=>({id:m.idMatricula,alumnoId:m.idAlumno,nro:'MAT-'+String(m.idMatricula).padStart(4,'0'),nombre:m.nombreAlumno,seccion:formatAcademicSection(m.nivel,m.grado,m.seccion),nivel:m.nivel,grado:m.grado,seccionLetra:m.seccion,curso:m.nombreCurso,nrcCurso:m.nrcCurso,anio:m.periodoAcademico,fecha:m.fecha,estado:m.estado}));
     allReclamos=(data.reclamos||[]).map(r=>({id:r.idReclamo,asunto:r.motivo,tipo:'academico',prioridad:r.prioridad||'normal',desc:r.descripcion||'',autor:r.nombreAlumno,fecha:r.fecha,estado:r.estado==='en_revision'?'revision':r.estado}));
-    const registrosRemotos=[...(data.alumnos||[]).map(a=>({id:'alumno-'+a.idAlumno,nombre:`${a.nombre} ${a.apellido}`.trim(),nombres:a.nombre||'',apellido:a.apellido||'',tipo:'alumno',dni:a.dni,email:a.correo||'',tel:a.telefono||'',fechanac:a.fechaNacimientoFormulario||a.fechaNacimiento||'',sexo:({masculino:'M',femenino:'F'}[String(a.sexo||'').trim().toLowerCase()]||a.sexo||''),procedencia:a.procedencia||'',direccion:a.direccion||'',apoderado:a.apoderadoNombre||'',apoDni:a.apoderadoDni||'',apoTel:a.apoderadoTelefono||'',apoEmail:a.apoderadoCorreo||'',obs:a.apoderadoObservaciones||'',fecha:'Base de datos'})),...(data.docentes||[]).map(d=>({id:'docente-'+d.idDocente,nombre:`${d.nombre} ${d.apellido}`.trim(),tipo:'docente',email:d.correo||'',tel:d.telefono||'',fecha:'Base de datos'}))];
+    const registrosRemotos=[...(data.alumnos||[]).map(a=>({id:'alumno-'+a.idAlumno,nombre:`${a.nombre} ${a.apellido}`.trim(),nombres:a.nombre||'',apellido:a.apellido||'',tipo:'alumno',dni:a.dni,email:a.correo||'',tel:a.telefono||'',fechanac:a.fechaNacimientoFormulario||a.fechaNacimiento||'',sexo:({masculino:'M',femenino:'F'}[String(a.sexo||'').trim().toLowerCase()]||a.sexo||''),nivel:a.nivel||'',grado:a.grado||'',seccion:a.seccion||'',procedencia:a.procedencia||'',direccion:a.direccion||'',apoderado:a.apoderadoNombre||'',apoDni:a.apoderadoDni||'',apoTel:a.apoderadoTelefono||'',apoEmail:a.apoderadoCorreo||'',obs:a.apoderadoObservaciones||'',fecha:'Base de datos'})),...(data.docentes||[]).map(d=>({id:'docente-'+d.idDocente,nombre:`${d.nombre} ${d.apellido}`.trim(),tipo:'docente',email:d.correo||'',tel:d.telefono||'',fecha:'Base de datos'}))];
     allRegistros=registrosRemotos;
     dashboardStats=data.stats||{};
     localStorage.setItem(DATA_KEY,JSON.stringify({allStudents,allGrades,allTasks,allMatriculas,allReclamos,allRegistros}));
@@ -45,9 +45,6 @@ function saveDataStore(){
   if(CFG.apiUrl) syncDataWithApi(payload);
 }
 async function guardarAlumnoEnServidor(registro){
-  const grado=document.getElementById('ci-reg-grado')?.value||'';
-  const seccion=document.getElementById('ci-reg-seccionletra')?.value||'';
-  const grupo=/^[AB]$/.test(seccion)&&/^[1-6]$/.test(grado)?`${seccion}${grado}`:null;
   let response;
   try{
     response=await fetch(CFG.apiUrl+'/api/alumno',{
@@ -57,7 +54,9 @@ async function guardarAlumnoEnServidor(registro){
         nombre:registro.nombres,
         apellido:registro.apellido,
         dni:registro.dni,
-        grupo,
+        nivel:registro.nivel,
+        grado:Number(registro.grado),
+        seccion:registro.seccion,
         correo:registro.email,
         telefono:registro.tel,
         fechaNacimiento:registro.fechanac,
@@ -108,9 +107,9 @@ async function loadAcademicAssignments(){
   if(!response.ok)throw new Error(result.error||'No se pudieron cargar las asignaciones académicas.');
   academicAssignments=Array.isArray(result)?result:[];
   const options=academicAssignments.map(assignment=>
-    `<option value="${assignment.idAsignacion}">${assignment.nombreCurso} - ${assignment.grupo} (${assignment.periodoAcademico})</option>`
+    `<option value="${assignment.idAsignacion}">${assignment.nombreCurso} - ${formatAcademicSection(assignment.nivel,assignment.grado,assignment.seccion)} (${assignment.periodoAcademico})</option>`
   ).join('');
-  ['att-group-filter','grades-assignment-filter'].forEach(id=>{
+  ['att-assignment-filter','grades-assignment-filter'].forEach(id=>{
     const select=document.getElementById(id);
     if(!select)return;
     select.innerHTML='<option value="">Seleccionar curso y grado</option>'+options;
