@@ -5,6 +5,7 @@ const { randomBytes, scrypt, timingSafeEqual } = require('crypto');
 const { promisify } = require('util');
 const { pool, obtenerDatosDashboard, mysqlUnavailable } = require('./consultas');
 const { registrarAlumno } = require('./servicios/alumnos');
+const {generarCorreoPersonal} = require('./validaciones/personal');
 const {
   listarAsignaciones,
   obtenerListaAsignacion,
@@ -300,11 +301,12 @@ async function request(req, res) {
       const role = String(data.rol || '');
       const name = String(data.nombre || '').trim();
       const surname = String(data.apellido || '').trim();
-      const email = String(data.correo || '').trim().toLowerCase();
       if (!['teacher', 'registrador'].includes(role)) return json(res, 400, {error: 'El rol de personal no es válido.'});
-      if (!name || !surname || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        return json(res, 400, {error: 'Nombres, apellidos y un correo válido son obligatorios.'});
+      if (!name || !surname) {
+        return json(res, 400, {error: 'Nombres y apellidos son obligatorios.'});
       }
+      const email = generarCorreoPersonal(name, surname);
+      if (!email) return json(res, 400, {error: 'No se pudo generar un correo válido con el nombre y apellido proporcionados.'});
       const defaultPassword = process.env.PERSONAL_DEFAULT_PASSWORD;
       if (!defaultPassword || defaultPassword.length < 10) {
         return json(res, 503, {error: 'Configura PERSONAL_DEFAULT_PASSWORD con al menos 10 caracteres antes de registrar personal.'});
@@ -312,6 +314,19 @@ async function request(req, res) {
       const connection = await pool.getConnection();
       try {
         await connection.beginTransaction();
+        const [existingEmails] = await connection.query(
+          `SELECT correo FROM usuario WHERE LOWER(correo) = ?
+           UNION ALL
+           SELECT correo FROM docente WHERE LOWER(correo) = ?
+           UNION ALL
+           SELECT correo FROM alumno WHERE LOWER(correo) = ?
+           LIMIT 1`,
+          [email, email, email]
+        );
+        if (existingEmails.length) {
+          await connection.rollback();
+          return json(res, 409, {error: `El correo generado ${email} ya está registrado.`});
+        }
         let idDocente = null;
         if (role === 'teacher') {
           if (!Array.isArray(data.asignaciones) || !data.asignaciones.length) {
@@ -380,7 +395,11 @@ async function request(req, res) {
           }
         }
         await connection.commit();
-        return json(res, 201, {id: account.insertId, mensaje: 'Personal registrado. Debe cambiar la contraseña al iniciar sesión.'});
+        return json(res, 201, {
+          id: account.insertId,
+          correo: email,
+          mensaje: 'Personal registrado. Debe cambiar la contraseña al iniciar sesión.'
+        });
       } catch (error) {
         await connection.rollback();
         if (error.code === 'ER_DUP_ENTRY' &&

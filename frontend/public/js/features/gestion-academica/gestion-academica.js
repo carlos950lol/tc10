@@ -540,7 +540,7 @@ async function saveRegistro(){
     nivel,
     grado,
     seccion,
-    email: document.getElementById('reg-email').value.trim(),
+    email: tipo === 'alumno' ? document.getElementById('reg-email').value.trim() : '',
     tel: document.getElementById('reg-tel').value.trim(),
     fechanac:fechaNacimiento,
     apoderado:apoderadoNombre,
@@ -553,6 +553,7 @@ async function saveRegistro(){
       ?await guardarAlumnoEnServidor(reg)
       :await guardarPersonalEnServidor(reg);
     reg.id=resultado.id;
+    if(tipo!=='alumno')reg.email=resultado.correo;
     allRegistros.push(reg);
   }catch(error){
     console.error('No se pudo guardar el registro.',error);
@@ -577,6 +578,10 @@ function toggleLegacyRegistrationFields(){
   const isAlumno=document.getElementById('reg-tipo')?.value==='alumno';
   const placement=document.getElementById('reg-school-placement');
   if(placement)placement.style.display=isAlumno?'grid':'none';
+  const emailField=document.getElementById('reg-email-wrap');
+  if(emailField)emailField.style.display=isAlumno?'':'none';
+  const personalEmailNote=document.getElementById('reg-personal-email-note');
+  if(personalEmailNote)personalEmailNote.style.display=isAlumno?'none':'block';
 }
 // Función para el formulario inline de CI_Registro
 function toggleRegistroAlumnoFields(){
@@ -589,6 +594,10 @@ function toggleRegistroAlumnoFields(){
   });
   const docenteFields=document.getElementById('ci-reg-docente-wrap');
   if(docenteFields)docenteFields.style.display=isDocente?'flex':'none';
+  const emailField=document.getElementById('ci-reg-email-wrap');
+  if(emailField)emailField.style.display=isAlumno?'':'none';
+  const personalEmailNote=document.getElementById('ci-reg-personal-email-note');
+  if(personalEmailNote)personalEmailNote.style.display=isAlumno?'none':'block';
 }
 function mostrarErrorRegistro(mensaje){
   mostrarAvisoFormulario('ci-reg-error', mensaje);
@@ -635,7 +644,7 @@ async function submitRegistroForm(){
     seccion,
     seccionLabel:formatAcademicSection(nivel,grado,seccion),
     direccion: document.getElementById('ci-reg-direccion')?.value.trim()||'',
-    email: document.getElementById('ci-reg-email').value.trim(),
+    email: tipo==='alumno' ? document.getElementById('ci-reg-email').value.trim() : '',
     tel: telefono,
     apoderado: apoderadoNombre,
     apoDni: apoderadoDni,
@@ -657,6 +666,7 @@ async function submitRegistroForm(){
     }else{
       const resultado=await guardarPersonalEnServidor(reg);
       reg.id=`usuario-${resultado.id}`;
+      reg.email=resultado.correo;
     }
     allRegistros.push(reg);
   }catch(error){
@@ -673,7 +683,7 @@ async function submitRegistroForm(){
       'ci-reg-feedback',
       tipo==='alumno'
         ? 'Registro guardado en la base de datos.'
-        : 'Personal registrado. Debe cambiar la contraseña al iniciar sesión.',
+        : `Personal registrado con el correo ${reg.email}. Debe cambiar la contraseña al iniciar sesión.`,
       'success'
     );
   }

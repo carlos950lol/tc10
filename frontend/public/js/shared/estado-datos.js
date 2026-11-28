@@ -87,7 +87,6 @@ async function guardarPersonalEnServidor(registro){
       body:JSON.stringify({
         nombre:registro.nombres,
         apellido:registro.apellido,
-        correo:registro.email,
         telefono:registro.tel,
         rol:registro.tipo==='docente'?'teacher':registro.tipo,
         asignaciones:registro.asignaciones || []

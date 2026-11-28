@@ -70,6 +70,8 @@ El workflow `.github/workflows/kiwi-tcms.yml` importa a Kiwi TCMS el reporte JUn
 
 El registro de alumnos valida nombres, apellidos y DNI de 8 digitos en el navegador y en la API. La tabla `alumno` aplica una restriccion unica al DNI; la API tambien convierte duplicados en respuestas HTTP 409. Con MySQL desconectado, los registros quedan guardados en el almacenamiento local del navegador y se conservan al actualizar o volver a iniciar sesion.
 
+Al registrar personal, la API genera el correo institucional con el nombre completo normalizado y el dominio `acadecam.edu.pe` (por ejemplo, `ana.perez@acadecam.edu.pe`). Si el correo ya aparece en las cuentas o registros existentes, rechaza el alta con HTTP 409.
+
 Para guardar un reporte JUnit junto con las capturas, ejecuta:
 
 ```powershell
